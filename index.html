@@ -308,17 +308,44 @@ body{
   background:linear-gradient(135deg,#FFF5EB,#FFE8D6);
   border-radius:16px;padding:24px;margin-bottom:16px;
 }
-.word-en{font-size:32px;font-weight:700;color:var(--primary-dark);margin-bottom:4px}
-.word-phonetic{font-size:14px;color:var(--text-light);font-style:italic;margin-bottom:8px}
+.word-en{font-size:32px;font-weight:700;color:var(--primary-dark);margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.word-en .speak-btn{
+  width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--primary);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;
+}
+.word-en .speak-btn:hover{transform:scale(1.15);box-shadow:0 2px 8px rgba(232,168,124,.4)}
+.word-en .speak-btn:active{transform:scale(.95)}
+.word-phonetic{font-size:14px;color:var(--text-light);font-style:italic;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.word-phonetic .speak-sm{
+  width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(232,168,124,.2);color:var(--primary-dark);font-size:11px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.word-phonetic .speak-sm:hover{background:var(--primary);color:#fff}
 .word-cn{font-size:16px;color:var(--text)}
 .word-example{
   margin-top:12px;padding:12px;background:rgba(255,255,255,.6);border-radius:10px;
-  font-size:13px;color:var(--text-light);
+  font-size:13px;color:var(--text-light);display:flex;align-items:flex-start;gap:8px;
 }
-.phrase-list{display:flex;flex-direction:column;gap:10px}
+.word-example .speak-ex{
+  width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
+  background:rgba(133,183,157,.2);color:var(--accent);font-size:11px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.word-example .speak-ex:hover{background:var(--accent);color:#fff}
+.phrase-item{display:flex;align-items:center;gap:10px}
+.phrase-item .speak-phrase{
+  width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
+  background:rgba(195,141,158,.15);color:var(--secondary);font-size:12px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.phrase-item .speak-phrase:hover{background:var(--secondary);color:#fff}
+.phrase-item .phrase-content{flex:1}
+.phrase-list-old{display:flex;flex-direction:column;gap:10px}
 .phrase-item{
   padding:14px;background:#FAF6F0;border-radius:12px;
-  border-left:4px solid var(--accent);
+  border-left:4px solid var(--accent);display:flex;align-items:center;gap:10px;
 }
 .phrase-en{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
 .phrase-cn{font-size:13px;color:var(--text-light)}
@@ -326,6 +353,48 @@ body{
   display:flex;align-items:center;gap:8px;padding:12px 16px;
   background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border-radius:12px;
   font-size:13px;color:#2E7D32;font-weight:600;
+}
+
+/* ===== 月经周期 ===== */
+.cycle-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+.cycle-day-cell{
+  aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:12px;cursor:pointer;
+  transition:all .2s;border:2px solid transparent;position:relative;
+}
+.cycle-day-cell.empty{background:transparent;cursor:default}
+.cycle-day-cell.menstrual{background:#FFCDD2}
+.cycle-day-cell.follicular{background:#E3F2FD}
+.cycle-day-cell.ovulation{background:#F3E5F5}
+.cycle-day-cell.luteal{background:#FFF3E0}
+.cycle-day-cell.today{border-color:var(--primary-dark)}
+.cycle-day-cell .day-num{font-weight:600;font-size:13px}
+.cycle-day-cell .day-dot{font-size:14px;margin-top:1px}
+.cycle-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-light)}
+.legend-dot{width:12px;height:12px;border-radius:3px}
+.cycle-status{
+  padding:20px;border-radius:14px;text-align:center;margin-bottom:16px;
+}
+.cycle-status-day{font-size:36px;font-weight:700;margin-bottom:4px}
+.cycle-status-label{font-size:13px;opacity:.85}
+.cycle-phase-card{
+  padding:16px;border-radius:12px;margin-bottom:10px;
+}
+.cycle-phase-title{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.cycle-phase-desc{font-size:12px;line-height:1.6}
+.cycle-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.cycle-stat{text-align:center;padding:12px;border-radius:10px;background:#FAF6F0}
+.cycle-stat-val{font-size:20px;font-weight:700;color:var(--secondary)}
+.cycle-stat-label{font-size:11px;color:var(--text-light);margin-top:2px}
+.period-log{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.period-log input{
+  padding:10px 12px;border:2px solid var(--border);border-radius:10px;
+  font-size:13px;font-family:inherit;color:var(--text);background:#FAF6F0;
+}
+.period-log input:focus{outline:none;border-color:var(--secondary)}
+.period-log .btn-secondary{
+  background:linear-gradient(135deg,var(--secondary),#D4A5B5);color:#fff;
 }
 
 /* ===== 通用 ===== */
@@ -371,6 +440,7 @@ body{
       <button class="nav-item" data-page="mood"><span class="nav-icon">📅</span>情绪日历</button>
       <button class="nav-item" data-page="weight"><span class="nav-icon">📝</span>体重记录</button>
       <button class="nav-item" data-page="pilates"><span class="nav-icon">🏋🏻‍♀️</span>普拉提</button>
+      <button class="nav-item" data-page="cycle"><span class="nav-icon">🌸</span>月经周期</button>
       <button class="nav-item" data-page="excel"><span class="nav-icon">📊</span>Excel</button>
       <button class="nav-item" data-page="kids"><span class="nav-icon">🎵</span>早教儿歌</button>
       <button class="nav-item" data-page="english"><span class="nav-icon">📖</span>英语</button>
@@ -518,11 +588,19 @@ body{
       </div>
     </section>
 
-    <!-- ===== 普拉提 ===== -->
+    <!-- ===== 普拉提（产后修复） ===== -->
     <section class="page" id="page-pilates">
       <div class="page-header">
-        <div class="page-title">🏋🏻‍♀️ 普拉提</div>
-        <div class="page-desc">每月打卡 · 动作要点 · 教学视频跟练</div>
+        <div class="page-title">🏋🏻‍♀️ 产后修复普拉提</div>
+        <div class="page-desc">温和修复 · 盆底肌 · 腹直肌 · 每月打卡跟练</div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#FFF0F5,#FFE4EC);border:1px solid #FFD0DC">
+        <div style="font-size:13px;color:#C2185B;line-height:1.8">
+          <strong>🤱 产后修复须知</strong><br>
+          • 顺产42天 / 剖宫产60天后，经医生复查合格再开始练习<br>
+          • 以<strong>盆底肌修复</strong>和<strong>腹直肌闭合</strong>为核心，动作温和<br>
+          • 全程配合呼吸，不可憋气，疼痛立即停止
+        </div>
       </div>
       <div class="card">
         <div class="cal-header">
@@ -539,10 +617,10 @@ body{
           <div class="cal-weekday">六</div>
         </div>
         <div class="cal-grid" id="pilates-days" style="margin-top:6px"></div>
-        <p style="margin-top:12px;font-size:12px;color:var(--text-light)">点击日期完成打卡，坚持练习，身体会感谢你 💪</p>
+        <p style="margin-top:12px;font-size:12px;color:var(--text-light)">点击日期完成打卡，坚持修复，身体会慢慢恢复 💪</p>
       </div>
       <div class="card">
-        <div class="card-title"><span class="emoji">🎯</span>练习要点</div>
+        <div class="card-title"><span class="emoji">🎯</span>产后修复要点</div>
         <div class="points-list" id="pilates-points"></div>
       </div>
       <div class="card">
@@ -566,6 +644,62 @@ body{
         <div class="card-title"><span class="emoji">📺</span><span id="excel-video-title">视频教程</span></div>
         <div class="video-box" id="excel-video-box"></div>
         <div class="video-card-desc" id="excel-video-desc"></div>
+      </div>
+    </section>
+
+    <!-- ===== 月经周期 ===== -->
+    <section class="page" id="page-cycle">
+      <div class="page-header">
+        <div class="page-title">🌸 月经周期记录</div>
+        <div class="page-desc">记录周期 · 预测经期 · 了解身体节奏</div>
+      </div>
+      <div class="cycle-grid">
+        <div class="card">
+          <div class="cal-header">
+            <div class="cal-month" id="cycle-month">2026年7月</div>
+            <div class="cal-nav">
+              <button id="cycle-prev">‹</button>
+              <button id="cycle-today-btn">今</button>
+              <button id="cycle-next">›</button>
+            </div>
+          </div>
+          <div class="cal-grid" id="cycle-weekdays">
+            <div class="cal-weekday">日</div><div class="cal-weekday">一</div>
+            <div class="cal-weekday">二</div><div class="cal-weekday">三</div>
+            <div class="cal-weekday">四</div><div class="cal-weekday">五</div>
+            <div class="cal-weekday">六</div>
+          </div>
+          <div class="cal-grid" id="cycle-days" style="margin-top:6px"></div>
+          <div class="cycle-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#FFCDD2"></div>经期</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#E3F2FD"></div>卵泡期</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#F3E5F5"></div>排卵期</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#FFF3E0"></div>黄体期</div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title"><span class="emoji">📌</span>记录经期</div>
+            <div class="period-log">
+              <input type="date" id="period-start" title="开始日期">
+              <input type="date" id="period-end" title="结束日期">
+            </div>
+            <button class="btn btn-secondary" id="period-save" style="width:100%">💾 记录本次经期</button>
+            <div class="cycle-stats" style="margin-top:16px">
+              <div class="cycle-stat"><div class="cycle-stat-val" id="cs-cycle">--</div><div class="cycle-stat-label">周期天数</div></div>
+              <div class="cycle-stat"><div class="cycle-stat-val" id="cs-period">--</div><div class="cycle-stat-label">经期天数</div></div>
+              <div class="cycle-stat"><div class="cycle-stat-val" id="cs-next">--</div><div class="cycle-stat-label">下次预计</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="emoji">📊</span>当前状态</div>
+            <div id="cycle-status-box"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📋</span>历史记录</div>
+        <div id="period-history" style="max-height:300px;overflow-y:auto"></div>
       </div>
     </section>
 
@@ -595,7 +729,11 @@ body{
           <div class="card">
             <div class="card-title"><span class="emoji">🔤</span>今日单词</div>
             <div class="word-card" id="word-card"></div>
-            <button class="btn btn-primary" id="word-next" style="width:100%">🔄 换一个单词</button>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" id="word-speak" style="flex:1">🔊 朗读单词</button>
+              <button class="btn btn-primary" id="word-next" style="flex:1;background:linear-gradient(135deg,var(--accent),#A5D4B8)">🔄 换一个</button>
+            </div>
+            <button class="btn" id="word-fav" style="width:100%;margin-top:10px;background:#FAF6F0;color:var(--text)">⭐ 收藏到单词本</button>
           </div>
           <div class="card">
             <div class="card-title"><span class="emoji">📖</span>单词本</div>
@@ -636,6 +774,7 @@ $$('.nav-item').forEach(btn=>{
     if(page==='mood') renderMoodCalendar();
     if(page==='weight') renderWeight();
     if(page==='pilates') renderPilates();
+    if(page==='cycle') renderCycle();
     if(page==='home') renderHome();
   });
 });
@@ -882,23 +1021,25 @@ $('#weight-save').onclick = ()=>{
   toast('体重已记录 ✅');
 };
 
-/* ==================== 普拉提 ==================== */
+/* ==================== 普拉提（产后修复） ==================== */
 let pilatesDate = new Date();
 const PILATES_POINTS = [
-  {n:1, t:'呼吸为王', d:'普拉提强调横向呼吸法，吸气时肋骨向两侧扩张，呼气时收紧核心，不要憋气。'},
-  {n:2, t:'核心收紧', d:'所有动作都从核心发力，想象肚脐向脊柱方向拉近，保持骨盆中立位。'},
-  {n:3, t:'动作精准', d:'普拉提不追求次数，追求精度。每个动作慢速控制，比快速做10个更有效。'},
-  {n:4, t:'脊柱逐节运动', d:'卷腹时想象脊柱一节一节离开地面，回落时也逐节放下，保护腰椎。'},
-  {n:5, t:'肩颈放松', d:'做百次拍击等动作时，肩膀远离耳朵，颈部不要紧张，避免代偿。'},
-  {n:6, t:'骨盆稳定', d:'做腿部动作时骨盆保持不动，这是普拉提与普通核心训练的关键区别。'},
-  {n:7, t:'坚持规律', d:'每周3-4次，每次30-45分钟，4周后会明显感到体态改善和核心力量提升。'}
+  {n:1, t:'盆底肌激活', d:'凯格尔运动是基础，吸气放松，呼气时想象上提盆底肌，像憋尿一样。每天3组，每组10次。'},
+  {n:2, t:'腹横肌收紧', d:'仰卧屈膝，呼气时将肚脐向下贴近脊柱，感受腹部深层收紧，保持5秒。不可做卷腹！'},
+  {n:3, t:'腹直肌闭合', d:'仰卧屈膝，双手交叉放在腹部中线，呼气时双手向中间推拢，帮助分离的腹直肌归位。'},
+  {n:4, t:'横向呼吸', d:'吸气时肋骨向两侧扩张，呼气时肋骨回落并收紧核心。产后尤其要避免屏气用力。'},
+  {n:5, t:'骨盆稳定', d:'做腿部动作时骨盆保持中立不动，这是评估核心恢复程度的重要指标。'},
+  {n:6, t:'动作温和', d:'产后关节松弛素仍残留，避免高强度冲击动作，所有动作缓慢有控制。'},
+  {n:7, t:'循序渐进', d:'从每天10分钟开始，每周增加5分钟。如恶露增多或疼痛，立即停止并就医。'},
+  {n:8, t:'剖宫产注意', d:'伤口愈合前（约6-8周）避免腹部发力动作，以呼吸训练和温和活动为主。'}
 ];
 const PILATES_VIDEOS = [
-  {title:'零基础 30min 普拉提塑形 · 详细口令版', bv:'BV1hD7h6nEjY', desc:'适合零基础入门，重点讲解呼吸方法和核心发力，从基础体式逐步带练。'},
-  {title:'基础垫上普拉提 · 含讲解', bv:'BV1mXxQeUEWd', desc:'基础垫上课程，唤醒身体、灵活四肢，适合初学者。'},
-  {title:'45分钟进阶普拉提 · 全身力量', bv:'BV1xRgb6sERK', desc:'进阶训练，核心、肩部、上背部及臀肌，融合功能性力量练习。'},
-  {title:'35分钟全身塑形普拉提 · 居家无器械', bv:'BV19a3M6kExJ', desc:'紧致线条、提升力量，居家无器械跟练。'},
-  {title:'30分钟全身普拉提力量训练 · 增肌燃脂', bv:'BV1Gqgf6EEg5', desc:'配合哑铃，节奏40秒运动/10秒休息，增肌燃脂、促进减脂。'}
+  {title:'25min 产后盆底肌修复 · PMA认证', bv:'BV1eu41137Lf', desc:'普拉提盆底肌修复跟练，每个动作8-12组。适合产后42天以上、盆底肌评估无异常后开始。'},
+  {title:'30min 垫上跟练 · 普拉提产后恢复', bv:'BV1yF4fewEJm', desc:'30分钟垫上产后恢复训练，无需器械。综合修复盆底肌与核心，温和渐进。'},
+  {title:'30min 腹直肌修复训练 · 深层核心', bv:'BV1Uz4y187kf', desc:'通过舒张腹直肌动作减轻分离程度、增强核心功能。剖腹产后也适用。'},
+  {title:'10min 跟练产后腹直肌修复', bv:'BV1Km4y1z77r', desc:'短时高效跟练，重点训练腹横肌与呼吸配合，帮助腹直肌归位。'},
+  {title:'产后1-42天 产褥期瑜伽跟练', bv:'BV1LQ4y1e7Wc', desc:'顺产/剖宫产通用，温和恢复体态、促进恶露排出、基础呼吸训练。'},
+  {title:'剖宫产产褥操 · 坐月子跟练', bv:'BV1Sx421Z79e', desc:'专为坐月子设计，温和活动、促进循环恢复、预防粘连。'}
 ];
 
 function renderPilates(){
@@ -1083,15 +1224,29 @@ const PHRASES = [
 ];
 
 let wordIdx = 0;
+let currentWord = null;
+
+// 朗读功能 - 使用浏览器内置 Web Speech API
+function speak(text, opts={}){
+  if(!('speechSynthesis' in window)){ toast('浏览器不支持语音朗读'); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = opts.lang || 'en-US';
+  u.rate = opts.rate || 0.9;
+  u.pitch = opts.pitch || 1;
+  window.speechSynthesis.speak(u);
+}
+
 function renderEnglish(){
   // 单词
   const showWord = (idx)=>{
     const w = WORDS[idx];
+    currentWord = w;
     $('#word-card').innerHTML = `
-      <div class="word-en">${w.en}</div>
-      <div class="word-phonetic">${w.ph}</div>
+      <div class="word-en">${w.en}<button class="speak-btn" onclick="speak('${w.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button></div>
+      <div class="word-phonetic">${w.ph}<button class="speak-sm" onclick="speak('${w.en.replace(/'/g,"\\'")}',{rate:0.7})" title="慢速朗读">🐢</button></div>
       <div class="word-cn">${w.cn}</div>
-      <div class="word-example">💬 ${w.ex}</div>
+      <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}',{rate:0.85})" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
     `;
   };
   // 根据日期决定今日单词
@@ -1100,16 +1255,36 @@ function renderEnglish(){
   wordIdx = dayOfYear % WORDS.length;
   showWord(wordIdx);
 
+  $('#word-speak').onclick = ()=>{
+    if(currentWord){
+      speak(currentWord.en);
+      toast('🔊 正在朗读...');
+    }
+  };
   $('#word-next').onclick = ()=>{
     wordIdx = (wordIdx+1) % WORDS.length;
     showWord(wordIdx);
   };
+  $('#word-fav').onclick = ()=>{
+    const learned = Store.get('learnedWords',[]);
+    if(!learned.includes(wordIdx)){
+      learned.push(wordIdx);
+      Store.set('learnedWords', learned);
+      toast('⭐ 已收藏到单词本');
+      renderWordHistory();
+    } else {
+      toast('已经收藏过了');
+    }
+  };
 
-  // 日常用语
-  $('#phrase-list').innerHTML = PHRASES.map(p=>`
+  // 日常用语 - 每条带朗读按钮
+  $('#phrase-list').innerHTML = PHRASES.map((p,i)=>`
     <div class="phrase-item">
-      <div class="phrase-en">${p.en}</div>
-      <div class="phrase-cn">${p.cn}</div>
+      <button class="speak-phrase" onclick="speak('${p.en.replace(/'/g,"\\'")}',{rate:0.85})" title="朗读">🔊</button>
+      <div class="phrase-content">
+        <div class="phrase-en">${p.en}</div>
+        <div class="phrase-cn">${p.cn}</div>
+      </div>
     </div>
   `).join('');
 
@@ -1130,20 +1305,217 @@ function renderEnglish(){
   }
   $('#eng-streak').innerHTML = `🔥 连续学习 ${streak} 天 · 已学 ${engHistory.length} 天 · 继续加油！`;
 
-  // 单词本
+  renderWordHistory();
+}
+
+function renderWordHistory(){
   const learned = Store.get('learnedWords',[]);
   if(learned.length===0){
-    $('#word-history').innerHTML = '<div class="empty-state">点击下方按钮收藏单词</div>';
+    $('#word-history').innerHTML = '<div class="empty-state">点击收藏按钮添加单词</div>';
   } else {
     $('#word-history').innerHTML = learned.map((i)=>`
-      <div style="padding:10px 12px;background:#FAF6F0;border-radius:8px;margin-bottom:6px">
+      <div style="padding:10px 12px;background:#FAF6F0;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <button class="speak-sm" onclick="speak('${WORDS[i].en.replace(/'/g,"\\'")}')" style="width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;background:rgba(232,168,124,.2);color:var(--primary-dark);font-size:11px;display:flex;align-items:center;justify-content:center">🔊</button>
         <span style="font-weight:600;color:var(--primary-dark)">${WORDS[i].en}</span>
-        <span style="color:var(--text-light);margin-left:8px">${WORDS[i].cn}</span>
+        <span style="color:var(--text-light);margin-left:8px;font-size:12px">${WORDS[i].cn}</span>
       </div>
     `).join('');
   }
 }
 renderEnglish();
+
+/* ==================== 月经周期 ==================== */
+let cycleDate = new Date();
+
+function getCycleInfo(){
+  // 获取所有经期记录，按时间排序
+  const periods = Store.get('periods',[]);
+  if(periods.length===0) return null;
+
+  periods.sort((a,b)=>a.start.localeCompare(b.start));
+  const last = periods[periods.length-1];
+  const lastStart = new Date(last.start);
+  const lastEnd = last.end? new Date(last.end) : new Date(last.start.getTime()+5*86400000);
+
+  // 计算平均周期天数
+  let avgCycle = 28;
+  if(periods.length>=2){
+    let total=0;
+    for(let i=1;i<periods.length;i++){
+      const d1=new Date(periods[i].start), d2=new Date(periods[i-1].start);
+      total += (d1-d2)/86400000;
+    }
+    avgCycle = Math.round(total/(periods.length-1));
+  }
+
+  // 平均经期天数
+  let avgPeriod = 5;
+  const validPeriods = periods.filter(p=>p.end);
+  if(validPeriods.length>0){
+    avgPeriod = Math.round(validPeriods.reduce((s,p)=>{
+      return s + (new Date(p.end)-new Date(p.start))/86400000 + 1;
+    },0)/validPeriods.length);
+  }
+
+  // 预测下次经期
+  const nextStart = new Date(lastStart);
+  nextStart.setDate(nextStart.getDate()+avgCycle);
+
+  return { periods, last, lastStart, lastEnd, avgCycle, avgPeriod, nextStart };
+}
+
+function getPhase(date){
+  const info = getCycleInfo();
+  if(!info) return {phase:null, dayOfCycle:null};
+
+  const {lastStart, avgCycle, avgPeriod, lastEnd} = info;
+  const diff = Math.floor((date - lastStart)/86400000);
+
+  if(diff < 0) return {phase:'before', dayOfCycle:null};
+  if(diff < avgPeriod) return {phase:'menstrual', dayOfCycle:diff+1};
+  // 排卵期大约在下次经前14天，持续3天
+  const ovulationStart = avgCycle - 14;
+  if(diff >= ovulationStart-2 && diff <= ovulationStart+2) return {phase:'ovulation', dayOfCycle:diff+1};
+  if(diff < ovulationStart-2) return {phase:'follicular', dayOfCycle:diff+1};
+  if(diff < avgCycle) return {phase:'luteal', dayOfCycle:diff+1};
+  return {phase:'next_predicted', dayOfCycle:diff+1};
+}
+
+function renderCycle(){
+  const y = cycleDate.getFullYear(), m = cycleDate.getMonth();
+  $('#cycle-month').textContent = `${y}年${m+1}月`;
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const today = todayStr();
+
+  let html = '';
+  for(let i=0;i<firstDay;i++) html += '<div class="cycle-day-cell empty"></div>';
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cellDate = new Date(y, m, d);
+    const {phase} = getPhase(cellDate);
+    const isToday = ds === today;
+    const phaseClass = phase || '';
+    const dot = phase==='menstrual'?'🔴':phase==='ovulation'?'🥚':phase==='follicular'?'💧':phase==='luteal'?'🌿':'';
+    html += `<div class="cycle-day-cell ${phaseClass} ${isToday?'today':''}" data-date="${ds}">
+      <span class="day-num">${d}</span>${dot?`<span class="day-dot">${dot}</span>`:''}
+    </div>`;
+  }
+  $('#cycle-days').innerHTML = html;
+
+  // 统计信息
+  const info = getCycleInfo();
+  if(info){
+    $('#cs-cycle').textContent = info.avgCycle;
+    $('#cs-period').textContent = info.avgPeriod;
+    const daysToNext = Math.ceil((info.nextStart - new Date())/86400000);
+    $('#cs-next').textContent = daysToNext>0?daysToNext+'天':'已到';
+
+    // 当前状态
+    const today = new Date();
+    const {phase, dayOfCycle} = getPhase(today);
+    const phaseMap = {
+      menstrual:{name:'经期', color:'#FFCDD2', bg:'linear-gradient(135deg,#FFCDD2,#FFAB91)', icon:'🔴', desc:'注意保暖休息，避免剧烈运动，可补充铁质和维生素。'},
+      follicular:{name:'卵泡期', color:'#E3F2FD', bg:'linear-gradient(135deg,#E3F2FD,#BBDEFB)', icon:'💧', desc:'精力逐渐恢复，适合开始适度运动，多吃蛋白质。'},
+      ovulation:{name:'排卵期', color:'#F3E5F5', bg:'linear-gradient(135deg,#F3E5F5,#E1BEE7)', icon:'🥚', desc:'身体状态最佳，可适当增加运动强度。注意避孕或备孕。'},
+      luteal:{name:'黄体期', color:'#FFF3E0', bg:'linear-gradient(135deg,#FFF3E0,#FFE0B2)', icon:'🌿', desc:'可能出现经前综合征，注意情绪管理，减少盐分摄入。'},
+      before:{name:'未记录', color:'#FAF6F0', bg:'linear-gradient(135deg,#FAF6F0,#F5EDDF)', icon:'📋', desc:'请先记录经期开始日期，系统将自动预测周期。'},
+      next_predicted:{name:'预计经期', color:'#FFCDD2', bg:'linear-gradient(135deg,#FFCDD2,#FFAB91)', icon:'🔴', desc:'经期即将到来，备好用品，注意休息。'}
+    };
+    const p = phaseMap[phase] || phaseMap.before;
+    let statusHtml = `<div class="cycle-status" style="background:${p.bg}">
+      <div class="cycle-status-day">${dayOfCycle?'D'+dayOfCycle:'-'}</div>
+      <div class="cycle-status-label">${p.icon} 当前：${p.name}</div>
+    </div>`;
+    statusHtml += `<div class="cycle-phase-card" style="background:#FAF6F0">
+      <div class="cycle-phase-title">${p.icon} ${p.name}小贴士</div>
+      <div class="cycle-phase-desc" style="color:var(--text-light)">${p.desc}</div>
+    </div>`;
+    if(info.nextStart){
+      const nextStr = `${info.nextStart.getFullYear()}-${String(info.nextStart.getMonth()+1).padStart(2,'0')}-${String(info.nextStart.getDate()).padStart(2,'0')}`;
+      statusHtml += `<div class="cycle-phase-card" style="background:rgba(195,141,158,.1)">
+        <div class="cycle-phase-title">📅 下次经期预测</div>
+        <div class="cycle-phase-desc" style="color:var(--text-light)">${nextStr}（约 ${Math.max(0,Math.ceil((info.nextStart-new Date())/86400000))} 天后）</div>
+      </div>`;
+    }
+    $('#cycle-status-box').innerHTML = statusHtml;
+  } else {
+    $('#cs-cycle').textContent = '--';
+    $('#cs-period').textContent = '--';
+    $('#cs-next').textContent = '--';
+    $('#cycle-status-box').innerHTML = '<div class="empty-state">还没有记录经期<br>请在右侧记录第一次经期开始日期</div>';
+  }
+
+  // 历史记录
+  renderPeriodHistory();
+}
+
+function renderPeriodHistory(){
+  const periods = Store.get('periods',[]);
+  const tbody = $('#period-history');
+  if(periods.length===0){
+    tbody.innerHTML = '<div class="empty-state">暂无记录</div>';
+    return;
+  }
+  periods.sort((a,b)=>b.start.localeCompare(a.start));
+  tbody.innerHTML = periods.map((p,i)=>{
+    const start = p.start;
+    const end = p.end || '—';
+    let days = '—';
+    if(p.end){
+      days = Math.round((new Date(p.end)-new Date(p.start))/86400000)+1+'天';
+    }
+    // 计算周期长度
+    let cycle = '';
+    if(i < periods.length-1){
+      const prev = periods[periods.length-2-i];
+      const prevStart = prev.start;
+      cycle = Math.round((new Date(start)-new Date(prevStart))/86400000)+'天';
+    }
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#FAF6F0;border-radius:10px;margin-bottom:8px">
+      <span style="font-size:16px">🔴</span>
+      <div style="flex:1">
+        <div style="font-weight:600;color:var(--text)">${start} ${end!=='—'?'→ '+end:''}</div>
+        <div style="font-size:12px;color:var(--text-light)">经期${days} ${cycle?'· 周期'+cycle:''}</div>
+      </div>
+      <button class="del-btn" data-idx="${periods.length-1-i}" style="color:#E07070;background:none;border:none;cursor:pointer;font-size:14px">✕</button>
+    </div>`;
+  }).join('');
+  $$('#period-history .del-btn').forEach(b=> b.onclick = ()=>{
+    const idx = +b.dataset.idx;
+    const ps = Store.get('periods',[]);
+    ps.splice(idx,1);
+    Store.set('periods', ps);
+    renderCycle();
+    toast('已删除');
+  });
+}
+
+$('#cycle-prev').onclick = ()=>{ cycleDate.setMonth(cycleDate.getMonth()-1); renderCycle(); };
+$('#cycle-next').onclick = ()=>{ cycleDate.setMonth(cycleDate.getMonth()+1); renderCycle(); };
+$('#cycle-today-btn').onclick = ()=>{ cycleDate = new Date(); renderCycle(); };
+
+$('#period-save').onclick = ()=>{
+  const start = $('#period-start').value;
+  const end = $('#period-end').value;
+  if(!start){ toast('请选择开始日期'); return; }
+  if(end && end < start){ toast('结束日期不能早于开始日期'); return; }
+  const periods = Store.get('periods',[]);
+  // 检查是否与已有记录重叠
+  const overlap = periods.some(p=>{
+    return !(end < p.start || start > (p.end||p.start));
+  });
+  if(overlap){ toast('与已有记录重叠'); return; }
+  periods.push({start, end: end||null});
+  Store.set('periods', periods);
+  $('#period-start').value = '';
+  $('#period-end').value = '';
+  renderCycle();
+  toast('经期已记录 ✅');
+};
+
+// 设置默认日期
+$('#period-start').value = todayStr();
 
 /* ==================== 初始化 ==================== */
 renderHome();
