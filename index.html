@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成长工作台 · Daily Growth Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#FBF7F0;
+  --card:#FFFFFF;
+  --primary:#E8A87C;
+  --primary-dark:#D4885F;
+  --secondary:#C38D9E;
+  --accent:#85B79D;
+  --warm:#F5C6AA;
+  --text:#5A4A3F;
+  --text-light:#8B7B6E;
+  --border:#F0E6D9;
+  --shadow:0 4px 16px rgba(180,140,100,.08);
+  --shadow-hover:0 8px 24px rgba(180,140,100,.15);
+  --radius:16px;
+  --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  line-height:1.6;
+  overflow:hidden;
+}
+
+/* ===== 布局 ===== */
+.app{display:flex;height:100vh;width:100%}
+
+/* ===== 侧边栏 ===== */
+.sidebar{
+  width:220px;min-width:220px;
+  background:linear-gradient(180deg,#FFF5EB 0%,#FBF0E3 100%);
+  border-right:1px solid var(--border);
+  padding:24px 0;
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.logo{
+  padding:0 24px 24px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:16px;
+}
+.logo-title{
+  font-size:20px;font-weight:700;color:var(--primary-dark);
+  display:flex;align-items:center;gap:8px;
+}
+.logo-sub{
+  font-size:11px;color:var(--text-light);
+  margin-top:4px;letter-spacing:1px;
+}
+.nav{flex:1;padding:0 12px}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 16px;border-radius:12px;
+  cursor:pointer;color:var(--text-light);
+  font-size:14px;font-weight:500;
+  transition:all .2s;margin-bottom:4px;
+  border:none;background:none;width:100%;text-align:left;
+  font-family:inherit;
+}
+.nav-item:hover{background:rgba(232,168,124,.12);color:var(--primary-dark)}
+.nav-item.active{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--warm) 100%);
+  color:#fff;box-shadow:0 4px 12px rgba(232,168,124,.35);
+}
+.nav-icon{font-size:18px;width:24px;text-align:center}
+.nav-badge{
+  margin-left:auto;font-size:10px;
+  background:var(--accent);color:#fff;
+  padding:2px 7px;border-radius:10px;
+}
+.sidebar-footer{
+  padding:16px 24px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--text-light);
+}
+
+/* ===== 主内容 ===== */
+.main{flex:1;overflow-y:auto;padding:32px 40px}
+.page{display:none;animation:fadeIn .4s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.page-header{margin-bottom:28px}
+.page-title{
+  font-size:26px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:10px;
+}
+.page-desc{font-size:13px;color:var(--text-light);margin-top:6px}
+
+/* ===== 卡片 ===== */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  padding:24px;box-shadow:var(--shadow);
+  margin-bottom:20px;
+}
+.card-title{
+  font-size:16px;font-weight:600;color:var(--text);
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.card-title .emoji{font-size:18px}
+
+/* ===== 主页 ===== */
+.hero{
+  background:linear-gradient(135deg,#FFE8D6 0%,#F5C6AA 100%);
+  border-radius:20px;padding:32px;color:#fff;
+  margin-bottom:24px;position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'🌱';position:absolute;right:30px;bottom:10px;
+  font-size:80px;opacity:.25;
+}
+.hero-greeting{font-size:13px;opacity:.9;margin-bottom:6px}
+.hero-title{font-size:28px;font-weight:700;margin-bottom:8px}
+.hero-quote{font-size:14px;opacity:.95;font-style:italic}
+.stats-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;
+}
+.stat-card{
+  background:var(--card);border-radius:var(--radius);padding:20px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+}
+.stat-card.s1::before{background:var(--primary)}
+.stat-card.s2::before{background:var(--secondary)}
+.stat-card.s3::before{background:var(--accent)}
+.stat-card.s4::before{background:#E8B87C}
+.stat-icon{font-size:26px;margin-bottom:8px}
+.stat-value{font-size:28px;font-weight:700;color:var(--text)}
+.stat-label{font-size:12px;color:var(--text-light);margin-top:4px}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.mood-today{display:flex;gap:12px;flex-wrap:wrap}
+.mood-btn{
+  width:56px;height:56px;border-radius:50%;border:2px solid transparent;
+  background:#FAF3EB;font-size:26px;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+}
+.mood-btn:hover{transform:scale(1.1)}
+.mood-btn.selected{border-color:var(--primary);background:#FFF0E0;transform:scale(1.05)}
+.progress-list{display:flex;flex-direction:column;gap:14px}
+.progress-item{display:flex;align-items:center;gap:12px}
+.progress-name{font-size:13px;width:80px;color:var(--text)}
+.progress-bar{
+  flex:1;height:10px;background:#F5EDDF;border-radius:6px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--primary),var(--warm));
+  transition:width .6s;
+}
+.progress-num{font-size:12px;color:var(--text-light);width:40px;text-align:right}
+
+/* ===== 情绪日历 ===== */
+.calendar-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.cal-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
+}
+.cal-month{font-size:18px;font-weight:700;color:var(--text)}
+.cal-nav{
+  display:flex;gap:8px;
+}
+.cal-nav button{
+  width:34px;height:34px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);cursor:pointer;font-size:16px;color:var(--text);
+  transition:all .2s;
+}
+.cal-nav button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
+}
+.cal-weekday{
+  text-align:center;font-size:12px;font-weight:600;color:var(--text-light);
+  padding:8px 0;
+}
+.cal-day{
+  aspect-ratio:1;border-radius:10px;background:#FAF6F0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;font-size:13px;color:var(--text);transition:all .2s;
+  position:relative;border:2px solid transparent;
+}
+.cal-day:hover{background:#FFF0E0;border-color:var(--warm)}
+.cal-day.empty{background:transparent;cursor:default}
+.cal-day.today{border-color:var(--primary)}
+.cal-day .day-num{font-weight:600}
+.cal-day .day-mood{font-size:18px;margin-top:2px}
+.mood-picker{
+  display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;justify-content:center;
+}
+.mood-pick{
+  width:50px;height:50px;border-radius:50%;background:#FAF3EB;
+  border:2px solid transparent;cursor:pointer;font-size:22px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.mood-pick:hover{transform:scale(1.1);border-color:var(--warm)}
+.mood-pick .mood-label{font-size:9px;color:var(--text-light);margin-top:1px}
+.chart-box{position:relative;height:240px}
+
+/* ===== 体重记录 ===== */
+.weight-grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.weight-input-box{display:flex;flex-direction:column;gap:14px}
+.weight-input{
+  display:flex;align-items:center;gap:8px;
+}
+.weight-input input{
+  flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:12px;
+  font-size:18px;color:var(--text);background:#FAF6F0;font-family:inherit;
+}
+.weight-input input:focus{outline:none;border-color:var(--primary)}
+.weight-input .unit{font-size:14px;color:var(--text-light)}
+.btn{
+  padding:12px 20px;border-radius:12px;border:none;cursor:pointer;
+  font-size:14px;font-weight:600;font-family:inherit;transition:all .2s;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--warm));color:#fff;
+}
+.btn-primary:hover{box-shadow:0 4px 12px rgba(232,168,124,.4)}
+.weight-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.ws-item{text-align:center;padding:12px;background:#FAF6F0;border-radius:12px}
+.ws-val{font-size:22px;font-weight:700;color:var(--primary-dark)}
+.ws-label{font-size:11px;color:var(--text-light);margin-top:2px}
+.weight-table{width:100%;border-collapse:collapse;font-size:13px}
+.weight-table th{
+  text-align:left;padding:10px 12px;background:#FAF6F0;color:var(--text-light);
+  font-weight:600;border-radius:8px;
+}
+.weight-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.weight-table tr:hover{background:#FFFAF3}
+.del-btn{
+  color:#E07070;background:none;border:none;cursor:pointer;font-size:14px;
+}
+
+/* ===== 普拉提 ===== */
+.pilates-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.video-box{
+  border-radius:12px;overflow:hidden;margin-bottom:14px;
+  box-shadow:var(--shadow);background:#000;
+}
+.video-box iframe{width:100%;aspect-ratio:16/9;border:none;display:block}
+.video-card-title{
+  font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px;
+}
+.video-card-desc{font-size:12px;color:var(--text-light);margin-bottom:12px}
+.points-list{display:flex;flex-direction:column;gap:10px}
+.point-item{
+  display:flex;gap:10px;padding:12px;background:#FAF6F0;border-radius:10px;
+  font-size:13px;
+}
+.point-num{
+  width:24px;height:24px;border-radius:50%;background:var(--primary);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+}
+
+/* ===== Excel ===== */
+.excel-cats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.excel-cat{
+  padding:8px 16px;border-radius:20px;background:#FAF6F0;border:1px solid var(--border);
+  cursor:pointer;font-size:13px;color:var(--text-light);transition:all .2s;
+}
+.excel-cat:hover{background:var(--warm);color:#fff}
+.excel-cat.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.fn-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.fn-card{
+  background:#FAF6F0;border-radius:12px;padding:16px;cursor:pointer;
+  transition:all .2s;border:2px solid transparent;
+}
+.fn-card:hover{border-color:var(--warm);transform:translateY(-2px);box-shadow:var(--shadow)}
+.fn-name{font-size:15px;font-weight:700;color:var(--primary-dark);margin-bottom:4px}
+.fn-desc{font-size:12px;color:var(--text-light);line-height:1.5}
+
+/* ===== 早教 ===== */
+.age-tabs{display:flex;gap:8px;margin-bottom:20px}
+.age-tab{
+  padding:8px 18px;border-radius:20px;background:#FAF6F0;cursor:pointer;
+  font-size:13px;color:var(--text-light);transition:all .2s;border:1px solid var(--border);
+}
+.age-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.content-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.content-card{
+  background:var(--card);border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.content-card .video-box{margin-bottom:0}
+.content-info{padding:16px}
+.content-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.content-meta{font-size:12px;color:var(--text-light)}
+.age-badge{
+  display:inline-block;padding:2px 8px;border-radius:10px;
+  background:var(--accent);color:#fff;font-size:11px;margin-right:6px;
+}
+
+/* ===== 英语 ===== */
+.eng-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.word-card{
+  background:linear-gradient(135deg,#FFF5EB,#FFE8D6);
+  border-radius:16px;padding:24px;margin-bottom:16px;
+}
+.word-en{font-size:32px;font-weight:700;color:var(--primary-dark);margin-bottom:4px}
+.word-phonetic{font-size:14px;color:var(--text-light);font-style:italic;margin-bottom:8px}
+.word-cn{font-size:16px;color:var(--text)}
+.word-example{
+  margin-top:12px;padding:12px;background:rgba(255,255,255,.6);border-radius:10px;
+  font-size:13px;color:var(--text-light);
+}
+.phrase-list{display:flex;flex-direction:column;gap:10px}
+.phrase-item{
+  padding:14px;background:#FAF6F0;border-radius:12px;
+  border-left:4px solid var(--accent);
+}
+.phrase-en{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
+.phrase-cn{font-size:13px;color:var(--text-light)}
+.eng-streak{
+  display:flex;align-items:center;gap:8px;padding:12px 16px;
+  background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border-radius:12px;
+  font-size:13px;color:#2E7D32;font-weight:600;
+}
+
+/* ===== 通用 ===== */
+.empty-state{
+  text-align:center;padding:40px;color:var(--text-light);font-size:13px;
+}
+.toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;
+  font-size:13px;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--warm)}
+
+/* ===== 响应式 ===== */
+@media(max-width:1100px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .home-grid,.calendar-wrap,.weight-grid,.pilates-grid,.eng-grid,.content-grid{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .sidebar{width:64px;min-width:64px}
+  .logo-title,.logo-sub,.nav-badge,.sidebar-footer{display:none}
+  .nav-item{justify-content:center;padding:11px}
+  .main{padding:20px 16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title">🌷 成长工作台</div>
+      <div class="logo-sub">DAILY GROWTH HUB</div>
+    </div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-page="home"><span class="nav-icon">🏠</span>主页</button>
+      <button class="nav-item" data-page="mood"><span class="nav-icon">📅</span>情绪日历</button>
+      <button class="nav-item" data-page="weight"><span class="nav-icon">📝</span>体重记录</button>
+      <button class="nav-item" data-page="pilates"><span class="nav-icon">🏋🏻‍♀️</span>普拉提</button>
+      <button class="nav-item" data-page="excel"><span class="nav-icon">📊</span>Excel</button>
+      <button class="nav-item" data-page="kids"><span class="nav-icon">🎵</span>早教儿歌</button>
+      <button class="nav-item" data-page="english"><span class="nav-icon">📖</span>英语</button>
+    </nav>
+    <div class="sidebar-footer">记录每一天的成长 ✨</div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="main">
+
+    <!-- ===== 主页 ===== -->
+    <section class="page active" id="page-home">
+      <div class="hero">
+        <div class="hero-greeting" id="hero-greeting">早上好呀 ☀️</div>
+        <div class="hero-title" id="hero-title">今天也要元气满满哦</div>
+        <div class="hero-quote" id="hero-quote">"每天进步一点点，就是最好的自己。"</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card s1">
+          <div class="stat-icon">😊</div>
+          <div class="stat-value" id="stat-mood">--</div>
+          <div class="stat-label">本月记录心情</div>
+        </div>
+        <div class="stat-card s2">
+          <div class="stat-icon">⚖️</div>
+          <div class="stat-value" id="stat-weight">--</div>
+          <div class="stat-label">最新体重(kg)</div>
+        </div>
+        <div class="stat-card s3">
+          <div class="stat-icon">🏋🏻‍♀️</div>
+          <div class="stat-value" id="stat-pilates">--</div>
+          <div class="stat-label">本月普拉提打卡</div>
+        </div>
+        <div class="stat-card s4">
+          <div class="stat-icon">📖</div>
+          <div class="stat-value" id="stat-english">--</div>
+          <div class="stat-label">英语学习天数</div>
+        </div>
+      </div>
+
+      <div class="home-grid">
+        <div class="card">
+          <div class="card-title"><span class="emoji">🌈</span>今日心情</div>
+          <div class="mood-today" id="home-mood-picker">
+            <button class="mood-btn" data-mood="😄" data-label="开心">😄</button>
+            <button class="mood-btn" data-mood="🙂" data-label="平静">🙂</button>
+            <button class="mood-btn" data-mood="😐" data-label="一般">😐</button>
+            <button class="mood-btn" data-mood="😔" data-label="低落">😔</button>
+            <button class="mood-btn" data-mood="😢" data-label="难过">😢</button>
+          </div>
+          <p style="margin-top:14px;font-size:12px;color:var(--text-light)">点击表情记录今天的心情，数据同步到情绪日历</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="emoji">📚</span>学习进度</div>
+          <div class="progress-list" id="progress-list">
+            <div class="progress-item"><span class="progress-name">普拉提</span><div class="progress-bar"><div class="progress-fill" id="prog-pilates"></div></div><span class="progress-num" id="prog-pilates-num">0%</span></div>
+            <div class="progress-item"><span class="progress-name">Excel</span><div class="progress-bar"><div class="progress-fill" id="prog-excel"></div></div><span class="progress-num" id="prog-excel-num">0%</span></div>
+            <div class="progress-item"><span class="progress-name">英语</span><div class="progress-bar"><div class="progress-fill" id="prog-english"></div></div><span class="progress-num" id="prog-english-num">0%</span></div>
+            <div class="progress-item"><span class="progress-name">体重管理</span><div class="progress-bar"><div class="progress-fill" id="prog-weight"></div></div><span class="progress-num" id="prog-weight-num">0%</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 情绪日历 ===== -->
+    <section class="page" id="page-mood">
+      <div class="page-header">
+        <div class="page-title">📅 情绪日历</div>
+        <div class="page-desc">记录每一天的心情变化，看见情绪的起伏轨迹</div>
+      </div>
+      <div class="calendar-wrap">
+        <div class="card">
+          <div class="cal-header">
+            <div class="cal-month" id="cal-month">2026年7月</div>
+            <div class="cal-nav">
+              <button id="cal-prev">‹</button>
+              <button id="cal-today">今</button>
+              <button id="cal-next">›</button>
+            </div>
+          </div>
+          <div class="cal-grid" id="cal-weekdays">
+            <div class="cal-weekday">日</div><div class="cal-weekday">一</div>
+            <div class="cal-weekday">二</div><div class="cal-weekday">三</div>
+            <div class="cal-weekday">四</div><div class="cal-weekday">五</div>
+            <div class="cal-weekday">六</div>
+          </div>
+          <div class="cal-grid" id="cal-days" style="margin-top:6px"></div>
+          <div class="mood-picker">
+            <button class="mood-pick" data-mood="😄" data-label="开心"><span>😄</span><span class="mood-label">开心</span></button>
+            <button class="mood-pick" data-mood="🙂" data-label="平静"><span>🙂</span><span class="mood-label">平静</span></button>
+            <button class="mood-pick" data-mood="😐" data-label="一般"><span>😐</span><span class="mood-label">一般</span></button>
+            <button class="mood-pick" data-mood="😔" data-label="低落"><span>😔</span><span class="mood-label">低落</span></button>
+            <button class="mood-pick" data-mood="😢" data-label="难过"><span>😢</span><span class="mood-label">难过</span></button>
+            <button class="mood-pick" data-mood="🤒" data-label="不适"><span>🤒</span><span class="mood-label">不适</span></button>
+          </div>
+          <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-light)">先选择日期，再点击表情记录心情</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="emoji">📈</span>本周心情趋势</div>
+          <div class="chart-box"><canvas id="mood-chart"></canvas></div>
+          <div style="margin-top:20px">
+            <div class="card-title"><span class="emoji">📋</span>本月统计</div>
+            <div id="mood-stats" style="font-size:13px;color:var(--text-light)"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 体重记录 ===== -->
+    <section class="page" id="page-weight">
+      <div class="page-header">
+        <div class="page-title">📝 体重记录</div>
+        <div class="page-desc">坚持记录，见证身体的每一点变化</div>
+      </div>
+      <div class="weight-grid">
+        <div>
+          <div class="card">
+            <div class="card-title"><span class="emoji">⚖️</span>记录今日体重</div>
+            <div class="weight-input">
+              <input type="number" id="weight-input" placeholder="输入体重" step="0.1" min="20" max="200">
+              <span class="unit">kg</span>
+            </div>
+            <button class="btn btn-primary" id="weight-save" style="width:100%;margin-top:14px">💾 保存记录</button>
+            <div class="weight-stats">
+              <div class="ws-item"><div class="ws-val" id="ws-latest">--</div><div class="ws-label">最新</div></div>
+              <div class="ws-item"><div class="ws-val" id="ws-avg">--</div><div class="ws-label">平均</div></div>
+              <div class="ws-item"><div class="ws-val" id="ws-change">--</div><div class="ws-label">变化</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="emoji">📊</span>历史记录</div>
+            <div style="max-height:300px;overflow-y:auto">
+              <table class="weight-table">
+                <thead><tr><th>日期</th><th>体重</th><th>变化</th><th></th></tr></thead>
+                <tbody id="weight-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="emoji">📈</span>体重趋势图</div>
+          <div class="chart-box" style="height:400px"><canvas id="weight-chart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 普拉提 ===== -->
+    <section class="page" id="page-pilates">
+      <div class="page-header">
+        <div class="page-title">🏋🏻‍♀️ 普拉提</div>
+        <div class="page-desc">每月打卡 · 动作要点 · 教学视频跟练</div>
+      </div>
+      <div class="card">
+        <div class="cal-header">
+          <div class="cal-month" id="pilates-month">2026年7月 打卡</div>
+          <div class="cal-nav">
+            <button id="pilates-prev">‹</button>
+            <button id="pilates-next">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="pilates-weekdays">
+          <div class="cal-weekday">日</div><div class="cal-weekday">一</div>
+          <div class="cal-weekday">二</div><div class="cal-weekday">三</div>
+          <div class="cal-weekday">四</div><div class="cal-weekday">五</div>
+          <div class="cal-weekday">六</div>
+        </div>
+        <div class="cal-grid" id="pilates-days" style="margin-top:6px"></div>
+        <p style="margin-top:12px;font-size:12px;color:var(--text-light)">点击日期完成打卡，坚持练习，身体会感谢你 💪</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">🎯</span>练习要点</div>
+        <div class="points-list" id="pilates-points"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📺</span>教学视频</div>
+        <div class="pilates-grid" id="pilates-videos"></div>
+      </div>
+    </section>
+
+    <!-- ===== Excel ===== -->
+    <section class="page" id="page-excel">
+      <div class="page-header">
+        <div class="page-title">📊 Excel 函数教程</div>
+        <div class="page-desc">实时更新的函数运用教程，从入门到精通</div>
+      </div>
+      <div class="excel-cats" id="excel-cats"></div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📚</span>函数列表</div>
+        <div class="fn-list" id="excel-fn-list"></div>
+      </div>
+      <div class="card" id="excel-video-card" style="display:none">
+        <div class="card-title"><span class="emoji">📺</span><span id="excel-video-title">视频教程</span></div>
+        <div class="video-box" id="excel-video-box"></div>
+        <div class="video-card-desc" id="excel-video-desc"></div>
+      </div>
+    </section>
+
+    <!-- ===== 早教儿歌绘本 ===== -->
+    <section class="page" id="page-kids">
+      <div class="page-header">
+        <div class="page-title">🎵 早教儿歌 · 绘本</div>
+        <div class="page-desc">适合 0-6 周岁宝贝的精选内容，寓教于乐</div>
+      </div>
+      <div class="age-tabs" id="age-tabs">
+        <div class="age-tab active" data-age="0-2">0-2岁</div>
+        <div class="age-tab" data-age="3-4">3-4岁</div>
+        <div class="age-tab" data-age="5-6">5-6岁</div>
+      </div>
+      <div class="content-grid" id="kids-content"></div>
+    </section>
+
+    <!-- ===== 英语 ===== -->
+    <section class="page" id="page-english">
+      <div class="page-header">
+        <div class="page-title">📖 每日英语</div>
+        <div class="page-desc">每天一个单词 · 常用日常用语 · 坚持就是胜利</div>
+      </div>
+      <div class="eng-streak" id="eng-streak">🔥 连续学习 0 天 · 继续加油！</div>
+      <div class="eng-grid">
+        <div>
+          <div class="card">
+            <div class="card-title"><span class="emoji">🔤</span>今日单词</div>
+            <div class="word-card" id="word-card"></div>
+            <button class="btn btn-primary" id="word-next" style="width:100%">🔄 换一个单词</button>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="emoji">📖</span>单词本</div>
+            <div id="word-history" style="max-height:240px;overflow-y:auto"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="emoji">💬</span>日常用语</div>
+          <div class="phrase-list" id="phrase-list"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== 工具函数 ==================== */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const Store = {
+  get(key, def){ try{ const v = localStorage.getItem('gh_'+key); return v? JSON.parse(v): def; }catch(e){ return def; } },
+  set(key, val){ localStorage.setItem('gh_'+key, JSON.stringify(val)); }
+};
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ==================== 路由 ==================== */
+$$('.nav-item').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    $$('.nav-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const page = btn.dataset.page;
+    $$('.page').forEach(p=>p.classList.remove('active'));
+    $('#page-'+page).classList.add('active');
+    if(page==='mood') renderMoodCalendar();
+    if(page==='weight') renderWeight();
+    if(page==='pilates') renderPilates();
+    if(page==='home') renderHome();
+  });
+});
+
+/* ==================== 主页 ==================== */
+function renderHome(){
+  const now = new Date();
+  const h = now.getHours();
+  const greeting = h<6?'夜深了 🌙':h<11?'早上好呀 ☀️':h<14?'中午好呀 🌤️':h<18?'下午好呀 🍵':h<22?'晚上好呀 🌆':'夜深了 🌙';
+  $('#hero-greeting').textContent = greeting;
+  const quotes = ['"每天进步一点点，就是最好的自己。"','"坚持是一种信仰，时间会给答案。"','"今天的努力，是明天的底气。"','"身体和灵魂，总要有一个在路上。"','"记录本身就是一种力量。"'];
+  $('#hero-quote').textContent = quotes[Math.floor(now.getDate()/7)%quotes.length];
+
+  // 本月心情
+  const moods = Store.get('moods',{});
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  let moodCount = 0;
+  Object.keys(moods).forEach(k=>{ if(k.startsWith(ym)) moodCount++; });
+  $('#stat-mood').textContent = moodCount;
+
+  // 最新体重
+  const weights = Store.get('weights',[]);
+  $('#stat-weight').textContent = weights.length? weights[weights.length-1].weight : '--';
+
+  // 普拉提打卡
+  const pilates = Store.get('pilates',{});
+  let pCount=0;
+  Object.keys(pilates).forEach(k=>{ if(k.startsWith(ym)) pCount++; });
+  $('#stat-pilates').textContent = pCount;
+
+  // 英语天数
+  const engHistory = Store.get('engHistory',[]);
+  $('#stat-english').textContent = engHistory.length;
+
+  // 进度条
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const today = now.getDate();
+  const setProg = (id, val) => { $('#prog-'+id).style.width = val+'%'; $('#prog-'+id+'-num').textContent = Math.round(val)+'%'; };
+  setProg('pilates', Math.min(100, pCount/daysInMonth*100));
+  setProg('english', Math.min(100, engHistory.length/30*100));
+  setProg('weight', Math.min(100, weights.length/daysInMonth*100));
+  // Excel 看过几个函数
+  const learnedFn = Store.get('learnedFn',[]);
+  setProg('excel', Math.min(100, learnedFn.length/10*100));
+
+  // 今日心情选择
+  const todayMood = moods[todayStr()];
+  $$('#home-mood-picker .mood-btn').forEach(b=>{
+    b.classList.toggle('selected', b.dataset.mood===todayMood);
+    b.onclick = ()=>{
+      moods[todayStr()] = b.dataset.mood;
+      Store.set('moods', moods);
+      $$('#home-mood-picker .mood-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      toast('心情已记录 '+b.dataset.mood+' '+b.dataset.label);
+      renderHome();
+    };
+  });
+}
+
+/* ==================== 情绪日历 ==================== */
+let calDate = new Date();
+let selectedCalDate = todayStr();
+const MOOD_SCORE = {'😄':5,'🙂':4,'😐':3,'😔':2,'😢':1,'🤒':0};
+
+function renderMoodCalendar(){
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  $('#cal-month').textContent = `${y}年${m+1}月`;
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const moods = Store.get('moods',{});
+  const today = todayStr();
+  let html = '';
+  for(let i=0;i<firstDay;i++) html += '<div class="cal-day empty"></div>';
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const mood = moods[ds];
+    const isToday = ds===today;
+    const isSel = ds===selectedCalDate;
+    html += `<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''}" data-date="${ds}" style="${isSel?'background:#FFE8D6;border-color:var(--primary)':''}">
+      <span class="day-num">${d}</span>${mood?`<span class="day-mood">${mood}</span>`:''}
+    </div>`;
+  }
+  $('#cal-days').innerHTML = html;
+  $$('#cal-days .cal-day:not(.empty)').forEach(el=>{
+    el.onclick = ()=>{ selectedCalDate = el.dataset.date; renderMoodCalendar(); };
+  });
+  renderMoodChart();
+  renderMoodStats();
+}
+
+function renderMoodChart(){
+  const moods = Store.get('moods',{});
+  const now = new Date();
+  // 本周（最近7天）
+  const labels=[], data=[];
+  for(let i=6;i>=0;i--){
+    const d = new Date(now); d.setDate(d.getDate()-i);
+    const ds = fmtDate(d);
+    labels.push(`${d.getMonth()+1}/${d.getDate()}`);
+    data.push(moods[ds]? MOOD_SCORE[moods[ds]] : null);
+  }
+  const ctx = $('#mood-chart');
+  if(window._moodChart) window._moodChart.destroy();
+  window._moodChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'心情指数', data,
+      borderColor:'#E8A87C', backgroundColor:'rgba(232,168,124,.15)',
+      fill:true, tension:.4, pointRadius:5, pointBackgroundColor:'#E8A87C',
+      spanGaps:true
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{
+        callbacks:{ label: ctx=> {
+          const m = ['😴 不适','😢 难过','😔 低落','😐 一般','🙂 平静','😄 开心'];
+          return m[ctx.parsed.y]||'未记录';
+        }}
+      }},
+      scales:{
+        y:{ min:0, max:5, ticks:{ stepSize:1, callback:v=>['','😢','😔','😐','🙂','😄'][v]||'' }, grid:{color:'#F5EDDF'} },
+        x:{ grid:{display:false} }
+      }
+    }
+  });
+}
+
+function renderMoodStats(){
+  const moods = Store.get('moods',{});
+  const ym = `${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}`;
+  const count = {};
+  Object.keys(moods).forEach(k=>{ if(k.startsWith(ym)){ const m=moods[k]; count[m]=(count[m]||0)+1; } });
+  const total = Object.values(count).reduce((a,b)=>a+b,0);
+  if(total===0){ $('#mood-stats').innerHTML='<div class="empty-state">本月还没有记录哦</div>'; return; }
+  const labels = {'😄':'开心','🙂':'平静','😐':'一般','😔':'低落','😢':'难过','🤒':'不适'};
+  let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  Object.keys(labels).forEach(m=>{
+    if(count[m]){
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FAF6F0;border-radius:8px">
+        <span style="font-size:18px">${m}</span><span style="font-size:12px">${labels[m]}</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--primary-dark)">${count[m]}天</span>
+      </div>`;
+    }
+  });
+  html += '</div>';
+  html += `<div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text-light)">共记录 ${total} 天</div>`;
+  $('#mood-stats').innerHTML = html;
+}
+
+$('#cal-prev').onclick = ()=>{ calDate.setMonth(calDate.getMonth()-1); renderMoodCalendar(); };
+$('#cal-next').onclick = ()=>{ calDate.setMonth(calDate.getMonth()+1); renderMoodCalendar(); };
+$('#cal-today').onclick = ()=>{ calDate = new Date(); selectedCalDate = todayStr(); renderMoodCalendar(); };
+
+$$('.mood-pick').forEach(btn=>{
+  btn.onclick = ()=>{
+    if(!selectedCalDate){ toast('请先选择日期'); return; }
+    const moods = Store.get('moods',{});
+    moods[selectedCalDate] = btn.dataset.mood;
+    Store.set('moods', moods);
+    toast(`已记录 ${selectedCalDate} 的心情 ${btn.dataset.mood}`);
+    renderMoodCalendar();
+  };
+});
+
+/* ==================== 体重记录 ==================== */
+function renderWeight(){
+  const weights = Store.get('weights',[]);
+  // 统计
+  if(weights.length){
+    const latest = weights[weights.length-1].weight;
+    const first = weights[0].weight;
+    const avg = (weights.reduce((a,b)=>a+b.weight,0)/weights.length).toFixed(1);
+    $('#ws-latest').textContent = latest;
+    $('#ws-avg').textContent = avg;
+    const change = (latest - first).toFixed(1);
+    $('#ws-change').textContent = (change>0?'+':'') + change;
+    $('#ws-change').style.color = change>0?'#E07070':change<0?'#85B79D':'var(--text)';
+  } else {
+    $('#ws-latest').textContent = '--';
+    $('#ws-avg').textContent = '--';
+    $('#ws-change').textContent = '--';
+  }
+
+  // 表格
+  const tbody = $('#weight-tbody');
+  if(weights.length===0){
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">还没有记录，开始记录第一个数据吧</td></tr>';
+  } else {
+    let html = '';
+    for(let i=weights.length-1; i>=0; i--){
+      const w = weights[i];
+      const prev = i>0? weights[i-1].weight : w.weight;
+      const diff = (w.weight - prev).toFixed(1);
+      const diffStr = i===0?'—':(diff>0?`<span style="color:#E07070">+${diff}</span>`:diff<0?`<span style="color:#85B79D">${diff}</span>`:'0');
+      html += `<tr><td>${w.date}</td><td style="font-weight:600">${w.weight} kg</td><td>${diffStr}</td>
+        <td><button class="del-btn" data-idx="${i}">✕</button></td></tr>`;
+    }
+    tbody.innerHTML = html;
+    $$('#weight-tbody .del-btn').forEach(b=> b.onclick = ()=>{
+      const idx = +b.dataset.idx;
+      weights.splice(idx,1);
+      Store.set('weights', weights);
+      renderWeight();
+      toast('已删除');
+    });
+  }
+
+  // 图表
+  const ctx = $('#weight-chart');
+  if(window._weightChart) window._weightChart.destroy();
+  const labels = weights.map(w=>w.date.slice(5));
+  const data = weights.map(w=>w.weight);
+  window._weightChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'体重', data,
+      borderColor:'#C38D9E', backgroundColor:'rgba(195,141,158,.15)',
+      fill:true, tension:.3, pointRadius:4, pointBackgroundColor:'#C38D9E'
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        y:{ grid:{color:'#F5EDDF'}, title:{display:true,text:'kg'} },
+        x:{ grid:{display:false} }
+      }
+    }
+  });
+}
+
+$('#weight-save').onclick = ()=>{
+  const v = parseFloat($('#weight-input').value);
+  if(!v || v<20 || v>200){ toast('请输入合理的体重'); return; }
+  const weights = Store.get('weights',[]);
+  const ds = todayStr();
+  const exist = weights.findIndex(w=>w.date===ds);
+  if(exist>=0) weights[exist].weight = v;
+  else weights.push({date:ds, weight:v});
+  weights.sort((a,b)=>a.date.localeCompare(b.date));
+  Store.set('weights', weights);
+  $('#weight-input').value = '';
+  renderWeight();
+  toast('体重已记录 ✅');
+};
+
+/* ==================== 普拉提 ==================== */
+let pilatesDate = new Date();
+const PILATES_POINTS = [
+  {n:1, t:'呼吸为王', d:'普拉提强调横向呼吸法，吸气时肋骨向两侧扩张，呼气时收紧核心，不要憋气。'},
+  {n:2, t:'核心收紧', d:'所有动作都从核心发力，想象肚脐向脊柱方向拉近，保持骨盆中立位。'},
+  {n:3, t:'动作精准', d:'普拉提不追求次数，追求精度。每个动作慢速控制，比快速做10个更有效。'},
+  {n:4, t:'脊柱逐节运动', d:'卷腹时想象脊柱一节一节离开地面，回落时也逐节放下，保护腰椎。'},
+  {n:5, t:'肩颈放松', d:'做百次拍击等动作时，肩膀远离耳朵，颈部不要紧张，避免代偿。'},
+  {n:6, t:'骨盆稳定', d:'做腿部动作时骨盆保持不动，这是普拉提与普通核心训练的关键区别。'},
+  {n:7, t:'坚持规律', d:'每周3-4次，每次30-45分钟，4周后会明显感到体态改善和核心力量提升。'}
+];
+const PILATES_VIDEOS = [
+  {title:'零基础 30min 普拉提塑形 · 详细口令版', bv:'BV1hD7h6nEjY', desc:'适合零基础入门，重点讲解呼吸方法和核心发力，从基础体式逐步带练。'},
+  {title:'基础垫上普拉提 · 含讲解', bv:'BV1mXxQeUEWd', desc:'基础垫上课程，唤醒身体、灵活四肢，适合初学者。'},
+  {title:'45分钟进阶普拉提 · 全身力量', bv:'BV1xRgb6sERK', desc:'进阶训练，核心、肩部、上背部及臀肌，融合功能性力量练习。'},
+  {title:'35分钟全身塑形普拉提 · 居家无器械', bv:'BV19a3M6kExJ', desc:'紧致线条、提升力量，居家无器械跟练。'},
+  {title:'30分钟全身普拉提力量训练 · 增肌燃脂', bv:'BV1Gqgf6EEg5', desc:'配合哑铃，节奏40秒运动/10秒休息，增肌燃脂、促进减脂。'}
+];
+
+function renderPilates(){
+  const y = pilatesDate.getFullYear(), m = pilatesDate.getMonth();
+  $('#pilates-month').textContent = `${y}年${m+1}月 打卡`;
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const pilates = Store.get('pilates',{});
+  const today = todayStr();
+  let html = '';
+  for(let i=0;i<firstDay;i++) html += '<div class="cal-day empty"></div>';
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const checked = pilates[ds];
+    const isFuture = ds > today;
+    const isToday = ds === today;
+    html += `<div class="cal-day ${isToday?'today':''}" data-date="${ds}" style="${checked?'background:rgba(133,183,157,.25)':''};${isFuture?'opacity:.4':''}">
+      <span class="day-num">${d}</span>${checked?'<span class="day-mood">✓</span>':''}
+    </div>`;
+  }
+  $('#pilates-days').innerHTML = html;
+  $$('#pilates-days .cal-day:not(.empty)').forEach(el=>{
+    el.onclick = ()=>{
+      const ds = el.dataset.date;
+      if(ds > todayStr()){ toast('未来的日子还没到哦'); return; }
+      const p = Store.get('pilates',{});
+      if(p[ds]){ delete p[ds]; toast('已取消打卡'); }
+      else { p[ds] = true; toast('打卡成功 💪'); }
+      Store.set('pilates', p);
+      renderPilates();
+    };
+  });
+
+  // 要点
+  $('#pilates-points').innerHTML = PILATES_POINTS.map(p=>
+    `<div class="point-item"><div class="point-num">${p.n}</div><div><strong>${p.t}</strong><br><span style="color:var(--text-light)">${p.d}</span></div></div>`
+  ).join('');
+
+  // 视频
+  $('#pilates-videos').innerHTML = PILATES_VIDEOS.map(v=>`
+    <div>
+      <div class="video-card-title">${v.title}</div>
+      <div class="video-box"><iframe src="https://player.bilibili.com/player.html?bvid=${v.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe></div>
+      <div class="video-card-desc">${v.desc}</div>
+    </div>
+  `).join('');
+}
+$('#pilates-prev').onclick = ()=>{ pilatesDate.setMonth(pilatesDate.getMonth()-1); renderPilates(); };
+$('#pilates-next').onclick = ()=>{ pilatesDate.setMonth(pilatesDate.getMonth()+1); renderPilates(); };
+
+/* ==================== Excel ==================== */
+const EXCEL_CATS = ['全部','查找引用','统计求和','逻辑判断','文本处理','数据透视'];
+const EXCEL_FNS = [
+  {cat:'查找引用', name:'VLOOKUP', desc:'按列查找数据，最经典的查找匹配函数', bv:'BV1EN411Z7UX', vdesc:'VLOOKUP函数最全18种用法系统讲解，从基础到进阶。'},
+  {cat:'查找引用', name:'XLOOKUP', desc:'VLOOKUP升级版，支持双向查找和错误处理', bv:'BV1EN411Z7UX', vdesc:'同样适用，讲解查找函数逻辑。'},
+  {cat:'查找引用', name:'INDEX+MATCH', desc:'比VLOOKUP更灵活的黄金组合', bv:'BV1EN411Z7UX', vdesc:'理解查找匹配的底层逻辑。'},
+  {cat:'统计求和', name:'SUMIF / SUMIFS', desc:'按条件求和，统计销售额必备', bv:'BV1KbjyzFEch', vdesc:'PAPAYA电脑教室出品，系统讲解SUMIF等条件统计函数。'},
+  {cat:'统计求和', name:'COUNTIF / COUNTIFS', desc:'按条件计数，统计出现次数', bv:'BV1KbjyzFEch', vdesc:'同上，配套练习档下载。'},
+  {cat:'统计求和', name:'AVERAGEIF', desc:'按条件求平均值', bv:'BV1KbjyzFEch', vdesc:'条件统计家族函数一并讲解。'},
+  {cat:'逻辑判断', name:'IF', desc:'条件判断，根据条件返回不同结果', bv:'BV1iKhdzyEUV', vdesc:'IF函数与OR函数嵌套使用，多条件逻辑判断。'},
+  {cat:'逻辑判断', name:'IF 嵌套', desc:'多条件嵌套判断，处理复杂逻辑', bv:'BV1iKhdzyEUV', vdesc:'IF与OR/AND函数的嵌套写法。'},
+  {cat:'逻辑判断', name:'IFS', desc:'多条件判断的简洁写法，替代嵌套IF', bv:'BV1iKhdzyEUV', vdesc:'理解逻辑函数家族。'},
+  {cat:'文本处理', name:'LEFT / RIGHT / MID', desc:'截取文本，提取身份证、手机号等信息', bv:'BV1EN411Z7UX', vdesc:'文本函数配合查找使用的场景。'},
+  {cat:'文本处理', name:'CONCAT / TEXTJOIN', desc:'合并文本，支持分隔符批量拼接', bv:'BV1EN411Z7UX', vdesc:'文本处理经典函数。'},
+  {cat:'文本处理', name:'SUBSTITUTE', desc:'替换文本中的指定内容', bv:'BV1EN411Z7UX', vdesc:'文本替换与清洗。'},
+  {cat:'数据透视', name:'数据透视表', desc:'快速汇总分析大量数据的利器', bv:'BV1Fd4y1z7c7', vdesc:'零基础数据透视表入门，创建、字段布局、汇总。'},
+  {cat:'数据透视', name:'切片器', desc:'数据透视表的交互式筛选器', bv:'BV1Fd4y1z7c7', vdesc:'数据透视表进阶交互。'},
+];
+let currentCat = '全部';
+
+function renderExcel(){
+  $('#excel-cats').innerHTML = EXCEL_CATS.map(c=>
+    `<div class="excel-cat ${c===currentCat?'active':''}" data-cat="${c}">${c}</div>`
+  ).join('');
+  $$('.excel-cat').forEach(el=> el.onclick = ()=>{ currentCat = el.dataset.cat; renderExcel(); });
+
+  const list = currentCat==='全部'? EXCEL_FNS : EXCEL_FNS.filter(f=>f.cat===currentCat);
+  const learned = Store.get('learnedFn',[]);
+  $('#excel-fn-list').innerHTML = list.map((f,i)=>{
+    const idx = EXCEL_FNS.indexOf(f);
+    const isLearned = learned.includes(idx);
+    return `<div class="fn-card" data-idx="${idx}">
+      <div class="fn-name">${f.name} ${isLearned?'<span style="font-size:12px;color:var(--accent)">✓ 已学</span>':''}</div>
+      <div class="fn-desc">${f.desc}</div>
+    </div>`;
+  }).join('');
+  $$('.fn-card').forEach(c=> c.onclick = ()=>{
+    const idx = +c.dataset.idx;
+    const f = EXCEL_FNS[idx];
+    $('#excel-video-card').style.display='block';
+    $('#excel-video-title').textContent = f.name + ' · 视频教程';
+    $('#excel-video-box').innerHTML = `<iframe src="https://player.bilibili.com/player.html?bvid=${f.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe>`;
+    $('#excel-video-desc').textContent = f.vdesc;
+    const learned = Store.get('learnedFn',[]);
+    if(!learned.includes(idx)){ learned.push(idx); Store.set('learnedFn', learned); }
+    toast('已开始学习 '+f.name);
+    renderExcel();
+  });
+}
+renderExcel();
+
+/* ==================== 早教儿歌绘本 ==================== */
+const KIDS_CONTENT = {
+  '0-2':[
+    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', desc:'原班团队打造，节奏欢快，宝宝听几遍就开口。'},
+    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', desc:'100集经典中文儿歌动画，画面温馨，适合低幼宝宝。'},
+    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', desc:'慢速英语儿歌142首，中英双语字幕，磨耳朵首选。'},
+    {title:'经典国际儿童绘本 120个', bv:'BV12uT761EXX', age:'3-6岁', desc:'国际获奖绘本朗读，附文字，亲子共读好素材。'}
+  ],
+  '3-4':[
+    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', desc:'慢速英语儿歌，启蒙黄金期磨耳朵。'},
+    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', desc:'经典中文儿歌，跟唱跟跳锻炼语言。'},
+    {title:'经典国际儿童绘本 120个', bv:'BV12uT761EXX', age:'3-6岁', desc:'绘本故事朗读，培养阅读习惯和想象力。'},
+    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', desc:'互动性强，适合亲子律动。'}
+  ],
+  '5-6':[
+    {title:'经典国际儿童绘本 120个', bv:'BV12uT761EXX', age:'3-6岁', desc:'幼小衔接期，通过绘本培养专注力和理解力。'},
+    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', desc:'系统英语启蒙，为小学英语打基础。'},
+    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', desc:'儿歌中的文化元素帮助认知发展。'},
+    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', desc:'英语节奏感训练，寓教于乐。'}
+  ]
+};
+let currentAge = '0-2';
+function renderKids(){
+  $('#kids-content').innerHTML = KIDS_CONTENT[currentAge].map(c=>`
+    <div class="content-card">
+      <div class="video-box"><iframe src="https://player.bilibili.com/player.html?bvid=${c.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe></div>
+      <div class="content-info">
+        <div class="content-title"><span class="age-badge">${c.age}</span>${c.title}</div>
+        <div class="content-meta">${c.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+$$('.age-tab').forEach(t=> t.onclick = ()=>{
+  $$('.age-tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  currentAge = t.dataset.age;
+  renderKids();
+});
+renderKids();
+
+/* ==================== 英语 ==================== */
+const WORDS = [
+  {en:'serendipity', ph:'/ˌserənˈdɪpəti/', cn:'意外发现美好事物的能力', ex:'Meeting her was pure serendipity.'},
+  {en:'resilient', ph:'/rɪˈzɪliənt/', cn:'有韧性的，能快速恢复的', ex:'Children are remarkably resilient.'},
+  {en:'mindful', ph:'/ˈmaɪndfəl/', cn:'留心的，正念的', ex:'Be mindful of your posture during Pilates.'},
+  {en:'nurture', ph:'/ˈnɜːrtʃər/', cn:'培育，养育', ex:'It is important to nurture a child\'s curiosity.'},
+  {en:'consistency', ph:'/kənˈsɪstənsi/', cn:'一致性，坚持', ex:'Consistency is the key to success.'},
+  {en:'embrace', ph:'/ɪmˈbreɪs/', cn:'拥抱，欣然接受', ex:'Embrace every challenge as an opportunity.'},
+  {en:'tranquil', ph:'/ˈtræŋkwɪl/', cn:'宁静的，平静的', ex:'A tranquil mind leads to better decisions.'},
+  {en:'vibrant', ph:'/ˈvaɪbrənt/', cn:'充满活力的，鲜艳的', ex:'She has a vibrant personality.'},
+  {en:'gratitude', ph:'/ˈɡrætɪtuːd/', cn:'感激，感恩', ex:'Practice gratitude every morning.'},
+  {en:'flourish', ph:'/ˈflʌrɪʃ/', cn:'茂盛，繁荣，茁壮成长', ex:'Children flourish in a loving environment.'},
+  {en:'authentic', ph:'/ɔːˈθentɪk/', cn:'真实的，真诚的', ex:'Be your authentic self.'},
+  {en:'whimsical', ph:'/ˈwɪmzɪkl/', cn:'异想天开的，古怪的', ex:'A whimsical children\'s story.'},
+  {en:'serene', ph:'/səˈriːn/', cn:'安详的，宁静的', ex:'The lake was serene at dawn.'},
+  {en:'endeavor', ph:'/ɪnˈdevər/', cn:'努力，尽力', ex:'We endeavor to do our best.'},
+  {en:'luminous', ph:'/ˈluːmɪnəs/', cn:'发光的，明亮的', ex:'The luminous stars filled the sky.'},
+  {en:'cherish', ph:'/ˈtʃerɪʃ/', cn:'珍惜，钟爱', ex:'Cherish every moment with your family.'},
+  {en:'thrive', ph:'/θraɪv/', cn:'茁壮成长，繁荣', ex:'Plants thrive in sunlight.'},
+  {en:'genuine', ph:'/ˈdʒenjuɪn/', cn:'真正的，真诚的', ex:'A genuine smile lights up the room.'},
+  {en:'tranquility', ph:'/træŋˈkwɪləti/', cn:'宁静，平静', ex:'Find tranquility in daily meditation.'},
+  {en:'inspire', ph:'/ɪnˈspaɪər/', cn:'激励，启发', ex:'Teachers inspire students to learn.'}
+];
+const PHRASES = [
+  {en:'How\'s it going?', cn:'最近怎么样？'},
+  {en:'I appreciate it.', cn:'我很感激。'},
+  {en:'Could you say that again?', cn:'能再说一遍吗？'},
+  {en:'It\'s a piece of cake.', cn:'小菜一碟。'},
+  {en:'Let\'s call it a day.', cn:'今天就到此为止吧。'},
+  {en:'I\'m looking forward to it.', cn:'我很期待。'},
+  {en:'Take your time.', cn:'慢慢来，不着急。'},
+  {en:'It depends.', cn:'看情况。'},
+  {en:'What do you mean?', cn:'你什么意思？'},
+  {en:'That makes sense.', cn:'有道理。'},
+  {en:'I couldn\'t agree more.', cn:'我完全同意。'},
+  {en:'Keep up the good work!', cn:'继续保持！'},
+  {en:'I\'m proud of you.', cn:'我为你骄傲。'},
+  {en:'Better late than never.', cn:'迟到总比不到好。'},
+  {en:'Practice makes perfect.', cn:'熟能生巧。'}
+];
+
+let wordIdx = 0;
+function renderEnglish(){
+  // 单词
+  const showWord = (idx)=>{
+    const w = WORDS[idx];
+    $('#word-card').innerHTML = `
+      <div class="word-en">${w.en}</div>
+      <div class="word-phonetic">${w.ph}</div>
+      <div class="word-cn">${w.cn}</div>
+      <div class="word-example">💬 ${w.ex}</div>
+    `;
+  };
+  // 根据日期决定今日单词
+  const today = new Date();
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(),0,0))/86400000);
+  wordIdx = dayOfYear % WORDS.length;
+  showWord(wordIdx);
+
+  $('#word-next').onclick = ()=>{
+    wordIdx = (wordIdx+1) % WORDS.length;
+    showWord(wordIdx);
+  };
+
+  // 日常用语
+  $('#phrase-list').innerHTML = PHRASES.map(p=>`
+    <div class="phrase-item">
+      <div class="phrase-en">${p.en}</div>
+      <div class="phrase-cn">${p.cn}</div>
+    </div>
+  `).join('');
+
+  // 打卡
+  const engHistory = Store.get('engHistory',[]);
+  const today1 = todayStr();
+  if(!engHistory.includes(today1)){
+    engHistory.push(today1);
+    Store.set('engHistory', engHistory);
+  }
+  // 连续天数
+  let streak = 0;
+  const d = new Date();
+  while(true){
+    const ds = fmtDate(d);
+    if(engHistory.includes(ds)){ streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  $('#eng-streak').innerHTML = `🔥 连续学习 ${streak} 天 · 已学 ${engHistory.length} 天 · 继续加油！`;
+
+  // 单词本
+  const learned = Store.get('learnedWords',[]);
+  if(learned.length===0){
+    $('#word-history').innerHTML = '<div class="empty-state">点击下方按钮收藏单词</div>';
+  } else {
+    $('#word-history').innerHTML = learned.map((i)=>`
+      <div style="padding:10px 12px;background:#FAF6F0;border-radius:8px;margin-bottom:6px">
+        <span style="font-weight:600;color:var(--primary-dark)">${WORDS[i].en}</span>
+        <span style="color:var(--text-light);margin-left:8px">${WORDS[i].cn}</span>
+      </div>
+    `).join('');
+  }
+}
+renderEnglish();
+
+/* ==================== 初始化 ==================== */
+renderHome();
+</script>
+</body>
+</html>
