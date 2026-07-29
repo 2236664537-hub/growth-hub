@@ -1267,13 +1267,35 @@ let wordIdx = 0;
 let currentWord = null;
 
 // 朗读功能 - 使用浏览器内置 Web Speech API
+let _voices = [];
+function loadVoices(){
+  _voices = window.speechSynthesis.getVoices() || [];
+}
+if('speechSynthesis' in window){
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+function pickEnglishVoice(){
+  // 优先选高质量的英语引擎
+  const prefer = ['Google US English','Samantha','Daniel','Karen','Google UK English Female','Microsoft Zira','Microsoft Aria'];
+  for(const name of prefer){
+    const v = _voices.find(v=>v.name.includes(name));
+    if(v) return v;
+  }
+  // 其次选任意 en-US/en-GB 引擎
+  return _voices.find(v=>v.lang.startsWith('en')) || null;
+}
 function speak(text, opts={}){
   if(!('speechSynthesis' in window)){ toast('浏览器不支持语音朗读'); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = opts.lang || 'en-US';
-  u.rate = opts.rate || 0.9;
+  // 主动选择英语语音引擎，避免手机用中文引擎读英文
+  const v = pickEnglishVoice();
+  if(v) u.voice = v;
+  u.rate = opts.rate || 0.75;   // 降慢语速，更清晰
   u.pitch = opts.pitch || 1;
+  u.volume = 1;
   window.speechSynthesis.speak(u);
 }
 
@@ -1284,9 +1306,9 @@ function renderEnglish(){
     currentWord = w;
     $('#word-card').innerHTML = `
       <div class="word-en">${w.en}<button class="speak-btn" onclick="speak('${w.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button></div>
-      <div class="word-phonetic">${w.ph}<button class="speak-sm" onclick="speak('${w.en.replace(/'/g,"\\'")}',{rate:0.7})" title="慢速朗读">🐢</button></div>
+      <div class="word-phonetic">${w.ph}<button class="speak-sm" onclick="speak('${w.en.replace(/'/g,"\\'")}',{rate:0.55})" title="慢速朗读">🐢</button></div>
       <div class="word-cn">${w.cn}</div>
-      <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}',{rate:0.85})" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
+      <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}')" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
     `;
   };
   // 根据日期决定今日单词
@@ -1320,7 +1342,7 @@ function renderEnglish(){
   // 日常用语 - 每条带朗读按钮
   $('#phrase-list').innerHTML = PHRASES.map((p,i)=>`
     <div class="phrase-item">
-      <button class="speak-phrase" onclick="speak('${p.en.replace(/'/g,"\\'")}',{rate:0.85})" title="朗读">🔊</button>
+      <button class="speak-phrase" onclick="speak('${p.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button>
       <div class="phrase-content">
         <div class="phrase-en">${p.en}</div>
         <div class="phrase-cn">${p.cn}</div>
