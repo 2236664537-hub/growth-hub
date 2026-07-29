@@ -420,10 +420,45 @@ body{
   .home-grid,.calendar-wrap,.weight-grid,.pilates-grid,.eng-grid,.content-grid{grid-template-columns:1fr}
 }
 @media(max-width:680px){
-  .sidebar{width:64px;min-width:64px}
-  .logo-title,.logo-sub,.nav-badge,.sidebar-footer{display:none}
-  .nav-item{justify-content:center;padding:11px}
-  .main{padding:20px 16px}
+  .app{flex-direction:column}
+  .sidebar{
+    width:100%;min-width:0;height:auto;padding:0;
+    flex-direction:row;align-items:center;
+    border-right:none;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+    background:linear-gradient(90deg,#FFF5EB 0%,#FBF0E3 100%);
+    backdrop-filter:blur(8px);
+    overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .sidebar::-webkit-scrollbar{display:none}
+  .logo{
+    padding:12px 14px;border-bottom:none;margin-bottom:0;
+    border-right:1px solid var(--border);flex-shrink:0;
+  }
+  .logo-title{font-size:15px;gap:4px}
+  .logo-sub{display:none}
+  .nav{
+    display:flex;flex-direction:row;padding:0 6px;
+    gap:4px;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .nav::-webkit-scrollbar{display:none}
+  .nav-item{
+    flex-shrink:0;padding:10px 12px;margin-bottom:0;
+    gap:5px;font-size:12px;border-radius:20px;
+    white-space:nowrap;
+  }
+  .nav-icon{font-size:15px;width:auto}
+  .nav-badge{display:none}
+  .sidebar-footer{display:none}
+  .main{padding:16px 14px;flex:1;overflow-y:auto}
+  .page-title{font-size:22px}
+  .hero{padding:24px}
+  .hero-title{font-size:22px}
+  .card{padding:16px}
 }
 </style>
 </head>
