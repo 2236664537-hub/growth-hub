@@ -432,6 +432,7 @@ body{
 /* 学习确认 */
 .learn-confirm{margin-top:10px}
 .learn-confirm .btn{font-size:15px;font-weight:700;padding:14px}
+.learn-hint{font-size:11px;color:var(--text-light);text-align:center;margin-top:6px}
 
 /* 5个单词进度条 */
 .word-progress-bar{display:flex;gap:6px;margin-bottom:14px}
@@ -1048,11 +1049,13 @@ body{
             <div class="word-card" id="word-card"></div>
             <div style="display:flex;gap:10px">
               <button class="btn btn-primary" id="word-speak" style="flex:1">🔊 朗读单词</button>
+              <button class="btn" id="word-prev" style="flex:0 0 auto;padding:0 16px;background:#FAF6F0;color:var(--text)">◀ 上一个</button>
             </div>
             <button class="btn" id="word-fav" style="width:100%;margin-top:10px;background:#FAF6F0;color:var(--text)">⭐ 收藏到单词本</button>
             <!-- 学习确认 -->
             <div class="learn-confirm" id="learn-confirm">
-              <button class="btn btn-primary" id="learn-done" style="width:100%;margin-top:12px;font-size:15px;padding:14px">✅ 我已经学会了，开始拼写！</button>
+              <button class="btn btn-primary" id="learn-done" style="width:100%;margin-top:12px;font-size:15px;padding:14px">✅ 我已经学会了 (1/5)</button>
+              <div class="learn-hint" id="learn-hint">点击按钮标记已学，学完5个才能进入拼写</div>
             </div>
             <!-- 拼写练习 - 字母方块 -->
             <div class="spell-section" id="spell-section" style="display:none">
@@ -2448,10 +2451,12 @@ function speak(text, opts={}){
 }
 
 // 拼写状态
-let spellLetters = [];     // 用户已选的字母
-let todayWordList = [];    // 今日5个单词
-let todayWordIdx = 0;      // 当前学到第几个 (0-4)
-let todayDoneCount = 0;    // 今日已拼对数量
+let spellLetters = [];      // 用户已选的字母
+let todayWordList = [];     // 今日5个单词
+let todayWordIdx = 0;       // 当前学到第几个 (0-4)
+let todayDoneCount = 0;     // 今日已拼对数量
+let learnedSet = new Set(); // 已学会的单词索引集合
+let spellMode = false;      // 是否处于拼写模式
 
 function renderEnglish(){
   const todayStr1 = todayStr();
@@ -2462,6 +2467,15 @@ function renderEnglish(){
   }).slice(0, 5);
   todayWordIdx = 0;
   todayDoneCount = parseInt(Store.get('spellScore_'+todayStr1, 0)) || 0;
+  learnedSet = new Set();
+  spellMode = false;
+
+  // 如果今天已经完成5个，直接进入拼写模式可复习
+  if(todayDoneCount >= 5){
+    learnedSet = new Set([0,1,2,3,4]);
+    spellMode = true;
+    todayWordIdx = 0;
+  }
 
   // 实用英语：每天随机选5条
   const phraseShuffled = PHRASES.slice().sort((a,b)=>{
@@ -2471,8 +2485,13 @@ function renderEnglish(){
 
   // 重置拼写状态
   spellLetters = [];
-  $('#spell-section').style.display = 'none';
-  $('#learn-confirm').style.display = 'block';
+  if(spellMode){
+    $('#spell-section').style.display = 'block';
+    $('#learn-confirm').style.display = 'none';
+  } else {
+    $('#spell-section').style.display = 'none';
+    $('#learn-confirm').style.display = 'block';
+  }
 
   // 渲染26个字母方块
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -2483,6 +2502,9 @@ function renderEnglish(){
   // 渲染进度条
   updateWordProgress();
   $('#spell-score').textContent = todayDoneCount;
+
+  // 更新"我已学会"按钮文字
+  updateLearnBtn();
 
   // 单词展示
   const showWord = (idx)=>{
@@ -2497,19 +2519,49 @@ function renderEnglish(){
       <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}')" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
     `;
     resetSpell();
-    $('#spell-section').style.display = 'none';
-    $('#learn-confirm').style.display = 'block';
     $('#spell-hint').textContent = '💡 ' + w.cn;
     updateWordProgress();
+    updateLearnBtn();
   };
-  showWord(0);
+  showWord(todayWordIdx);
 
-  // === "我已经学会了" → 进入拼写 ===
+  // === "我已经学会了" → 标记当前单词，学完5个才进入拼写 ===
   $('#learn-done').onclick = ()=>{
-    $('#learn-confirm').style.display = 'none';
-    $('#spell-section').style.display = 'block';
-    resetSpell();
-    toast('📝 试试看能不能拼出来吧！');
+    if(spellMode) return;
+    learnedSet.add(todayWordIdx);
+    toast('✅ 第'+(todayWordIdx+1)+'个单词已学会！');
+
+    // 找下一个未学会的
+    let next = todayWordIdx;
+    for(let i=0;i<5;i++){
+      next = (next+1) % 5;
+      if(!learnedSet.has(next)) break;
+    }
+
+    if(learnedSet.size >= 5){
+      spellMode = true;
+      $('#learn-confirm').style.display = 'none';
+      $('#spell-section').style.display = 'block';
+      todayWordIdx = 0;
+      showWord(0);
+      toast('🎓 5个单词全部学会！开始拼写吧！');
+    } else {
+      todayWordIdx = next;
+      showWord(next);
+      toast('还有 '+(5-learnedSet.size)+' 个单词需要学习');
+    }
+  };
+
+  // 上一个单词
+  $('#word-prev').onclick = ()=>{
+    if(spellMode) return;
+    let prev = todayWordIdx;
+    for(let i=0;i<5;i++){
+      prev = (prev-1+5) % 5;
+      if(!learnedSet.has(prev) || learnedSet.size>=5) break;
+    }
+    todayWordIdx = prev;
+    showWord(prev);
   };
 
   $('#word-speak').onclick = ()=>{
@@ -2550,6 +2602,27 @@ function renderEnglish(){
   updateEngStreak();
 
   renderWordHistory();
+}
+
+// 更新"我已学会"按钮文字
+function updateLearnBtn(){
+  const btn = $('#learn-done');
+  const hint = $('#learn-hint');
+  if(!btn) return;
+  if(spellMode){
+    btn.textContent = '🎓 已进入拼写模式';
+    btn.style.background = '#81C784';
+    if(hint) hint.textContent = '';
+    return;
+  }
+  const count = learnedSet.size;
+  btn.textContent = '✅ 我已经学会了 ('+count+'/5)';
+  if(count >= 5){
+    btn.textContent = '🎓 全部学会！开始拼写';
+  }
+  if(hint){
+    hint.textContent = count>=5 ? '点击按钮进入拼写环节' : '逐个学习5个单词，学完后才能拼写';
+  }
 }
 
 // 更新英语打卡状态
