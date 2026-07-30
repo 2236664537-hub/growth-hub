@@ -140,6 +140,22 @@ body{
 .stat-value{font-size:28px;font-weight:700;color:var(--text)}
 .stat-label{font-size:12px;color:var(--text-light);margin-top:4px}
 .home-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+/* ===== 宠物 ===== */
+.pet-food-btn{
+  width:44px;height:44px;border-radius:50%;border:2px solid #FFE082;
+  background:#FFF8E1;font-size:22px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.pet-food-btn:hover{transform:scale(1.2);box-shadow:0 2px 8px rgba(255,183,77,.4)}
+.pet-food-btn .food-count{
+  position:absolute;top:-4px;right:-4px;background:#E57373;color:#fff;
+  font-size:10px;width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+}
+.pet-hunger-bar{height:8px;background:#FFE082;border-radius:4px;overflow:hidden;margin-top:6px}
+.pet-hunger-fill{height:100%;border-radius:4px;transition:width .5s}
+.pet-msg{font-size:11px;color:var(--text-light);margin-top:4px;font-style:italic}
 .mood-today{display:flex;gap:12px;flex-wrap:wrap}
 .mood-btn{
   width:56px;height:56px;border-radius:50%;border:2px solid transparent;
@@ -586,6 +602,19 @@ body{
           </div>
         </div>
       </div>
+      <div class="card" style="background:linear-gradient(135deg,#FFF8E1,#FFECB3);border:2px solid #FFE082">
+        <div class="card-title"><span class="emoji">🐾</span>我的宠物</div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <div id="pet-avatar" style="font-size:72px;line-height:1;text-align:center;min-width:80px;transition:all .3s"></div>
+          <div style="flex:1">
+            <div id="pet-info" style="font-size:13px;color:var(--text);line-height:1.8"></div>
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="pet-foods"></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-light)">
+          💡 完成普拉提打卡 → 获得 🥩 <b>肉肉</b> ｜ 学习英语 → 获得 🐟 <b>小鱼干</b> ｜ 点击食物喂宠物
+        </div>
+      </div>
     </section>
 
     <!-- ===== 情绪日历 ===== -->
@@ -989,7 +1018,112 @@ function renderHome(){
       renderHome();
     };
   });
+
+  // 宠物系统
+  renderPet();
 }
+
+/* ==================== 宠物养成 ==================== */
+const PET_STAGES = [
+  {level:0, emoji:'🥚', name:'宠物蛋', maxHunger:30, msg:'好好学习和运动，蛋蛋就会孵化哦~'},
+  {level:1, emoji:'🐣', name:'小鸡宝宝', maxHunger:50, msg:'叽叽！喂我吃东西我就长大！'},
+  {level:2, emoji:'🐥', name:'小黄鸡', maxHunger:80, msg:'好饿好饿！快给我小鱼干~'},
+  {level:3, emoji:'🐱', name:'小猫咪', maxHunger:120, msg:'喵~今天又学了新单词！'},
+  {level:4, emoji:'🐶', name:'小狗狗', maxHunger:160, msg:'汪！主人好棒！继续加油！'},
+  {level:5, emoji:'🦊', name:'小狐狸', maxHunger:200, msg:'聪明的狐狸也爱学习哦~'},
+  {level:6, emoji:'🐼', name:'小熊猫', maxHunger:250, msg:'圆滚滚的熊猫为你骄傲！'},
+  {level:7, emoji:'🦄', name:'独角兽', maxHunger:320, msg:'✨ 你太厉害了！传说级宠物！'}
+];
+
+function getPet(){
+  return Store.get('pet', {stage:0, hunger:0, food:{meat:0, fish:0, carrot:0, cookie:0}, totalFed:0, lastFed:todayStr()});
+}
+
+function savePet(pet){ Store.set('pet', pet); }
+
+function feedPet(foodType, amount){
+  const pet = getPet();
+  const foodGain = {meat:8, fish:6, carrot:5, cookie:4};
+  if(!pet.food[foodType] || pet.food[foodType] < amount){
+    toast('食物不够了，快去学习和运动吧！');
+    return;
+  }
+  pet.food[foodType] -= amount;
+  const gain = foodGain[foodType] * amount;
+  pet.hunger += gain;
+  pet.totalFed += gain;
+  pet.lastFed = todayStr();
+  // 检查升级
+  let newStage = pet.stage;
+  const currentMax = PET_STAGES[pet.stage].maxHunger;
+  if(pet.hunger >= currentMax && pet.stage < PET_STAGES.length-1){
+    newStage = pet.stage+1;
+    pet.hunger = 0;
+  }
+  const oldStage = pet.stage;
+  pet.stage = newStage;
+  savePet(pet);
+  renderPet();
+  if(newStage > oldStage){
+    setTimeout(()=>toast('🎉 宠物进化了！变成了 '+PET_STAGES[newStage].name+'！'), 500);
+  } else {
+    toast('🍽️ 喂食成功！' + (gain>=10?'吃得好饱！':''));
+  }
+}
+
+function addFood(foodType){
+  const pet = getPet();
+  pet.food[foodType] = (pet.food[foodType]||0) + 1;
+  savePet(pet);
+}
+
+function renderPet(){
+  const pet = getPet();
+  const stage = PET_STAGES[Math.min(pet.stage, PET_STAGES.length-1)];
+  const today = todayStr();
+
+  // 如果今天还没喂过且过了午夜，饥饿度略微下降
+  if(pet.lastFed !== today && pet.hunger > 0){
+    pet.hunger = Math.max(0, pet.hunger - 2);
+    savePet(pet);
+  }
+
+  const hungerPct = Math.min(100, pet.hunger / stage.maxHunger * 100);
+  const hungerColor = hungerPct<20?'#E57373':hungerPct<50?'#FFB74D':hungerPct<80?'#FFD54F':'#81C784';
+
+  $('#pet-avatar').innerHTML = stage.emoji;
+  $('#pet-avatar').style.transform = hungerPct>80?'scale(1.1) rotate(-3deg)':'scale(1)';
+
+  const foodLabels = {meat:'🥩 肉肉', fish:'🐟 小鱼干', carrot:'🥕 胡萝卜', cookie:'🍪 饼干'};
+  $('#pet-foods').innerHTML = Object.keys(foodLabels).map(k=>{
+    const count = pet.food[k]||0;
+    return `<button class="pet-food-btn" onclick="feedPet('${k}',1)" title="喂${foodLabels[k]}" ${count===0?'disabled style="opacity:0.4"':''}>
+      ${foodLabels[k].split(' ')[0]}${count>0?`<span class="food-count">${count}</span>`:''}
+    </button>`;
+  }).join('');
+
+  $('#pet-info').innerHTML = `
+    <div style="font-weight:700;font-size:15px">${stage.name} <span style="font-size:11px;color:var(--text-light)">Lv.${pet.stage}</span></div>
+    <div class="pet-msg">${stage.msg}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+      <span style="font-size:11px;color:var(--text-light)">饱食度</span>
+      <div class="pet-hunger-bar" style="flex:1"><div class="pet-hunger-fill" style="width:${hungerPct}%;background:${hungerColor}"></div></div>
+      <span style="font-size:11px;color:var(--text-light)">${Math.round(hungerPct)}%</span>
+    </div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:4px">累计喂食：${pet.totalFed} 点 · 进化下一级还需 ${Math.max(0,stage.maxHunger-pet.hunger)} 点</div>
+  `;
+}
+
+// 在普拉提打卡和英语学习时自动获得食物
+// 重写 toast 以检测打卡事件
+const _originalToast = toast;
+toast = function(msg){
+  _originalToast(msg);
+  if(msg.includes('打卡成功')) addFood('meat');
+  if(msg.includes('体重已记录')) addFood('carrot');
+  if(msg.includes('已开始学习')) addFood('cookie');
+};
+
 
 /* ==================== 情绪日历 ==================== */
 let calDate = new Date();
@@ -1834,6 +1968,7 @@ function renderEnglish(){
     if(currentWord){
       speak(currentWord.en);
       toast('🔊 正在朗读...');
+      addFood('fish');
     }
   };
   $('#word-next').onclick = ()=>{
