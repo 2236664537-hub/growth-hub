@@ -334,6 +334,50 @@ body{
   background:linear-gradient(135deg,rgba(232,168,124,.12),rgba(133,183,157,.12));
   border-radius:20px;font-size:13px;color:var(--primary-dark);font-weight:600;
 }
+/* 播放时长控制 */
+.play-control-bar{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  background:var(--bg);border-bottom:1px solid rgba(0,0,0,.04);
+  flex-wrap:wrap;
+}
+.play-control-bar .pl-label{font-size:12px;color:var(--text-light);white-space:nowrap}
+.play-dur-btn{
+  padding:3px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.1);
+  background:#fff;font-size:11px;color:var(--text-light);cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+}
+.play-dur-btn:hover{border-color:var(--accent);color:var(--accent)}
+.play-dur-btn.active{
+  background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;
+}
+.play-timer{
+  font-size:11px;color:var(--accent);font-weight:700;margin-left:auto;
+  white-space:nowrap;display:flex;align-items:center;gap:4px;
+}
+.play-timer .timer-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse-dot 1s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.play-timer.paused{color:var(--text-light)}
+.play-timer.paused .timer-dot{animation:none;background:var(--text-light)}
+.play-progress{
+  height:3px;background:rgba(0,0,0,.05);border-radius:0;
+}
+.play-progress-bar{
+  height:100%;background:linear-gradient(90deg,var(--accent),var(--primary-dark));
+  border-radius:0;transition:width .3s linear;width:0%;
+}
+.play-pause-btn{
+  padding:3px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.1);
+  background:#fff;font-size:11px;color:var(--text-light);cursor:pointer;
+  transition:all .2s;
+}
+.play-pause-btn:hover{border-color:var(--primary);color:var(--primary)}
+.play-pause-btn.playing{background:var(--primary);color:#fff;border-color:var(--primary)}
+.now-playing-indicator{
+  position:absolute;top:8px;right:8px;padding:3px 8px;
+  background:var(--accent);color:#fff;font-size:10px;font-weight:700;
+  border-radius:10px;animation:pulse-dot 1.5s infinite;z-index:2;
+}
+.content-card{position:relative}
 
 /* ===== 英语 ===== */
 .eng-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -2002,7 +2046,142 @@ function hashDate(dateStr){
 }
 
 let currentAge = '0-2';
+
+// 播放控制状态
+let kidsPlayState = {
+  activeIdx: -1,        // 当前正在播放的视频索引
+  duration: 300,        // 默认5分钟 (秒)
+  remaining: 0,         // 剩余秒数
+  timerId: null,        // 计时器ID
+  isPaused: false,      // 是否暂停
+  todayItems: []        // 当前展示的视频列表
+};
+
+// 格式化时间
+function fmtTime(sec){
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+// 停止当前播放
+function stopKidsPlay(){
+  if(kidsPlayState.timerId){
+    clearInterval(kidsPlayState.timerId);
+    kidsPlayState.timerId = null;
+  }
+  kidsPlayState.activeIdx = -1;
+  kidsPlayState.remaining = 0;
+  kidsPlayState.isPaused = false;
+  updatePlayUI();
+}
+
+// 开始播放指定视频
+function startKidsPlay(idx){
+  stopKidsPlay();
+  if(idx >= kidsPlayState.todayItems.length) idx = 0;
+  kidsPlayState.activeIdx = idx;
+  kidsPlayState.remaining = kidsPlayState.duration;
+  kidsPlayState.isPaused = false;
+
+  // 刷新对应 iframe 并加 autoplay
+  const iframe = document.querySelector(`#kids-iframe-${idx}`);
+  if(iframe){
+    const item = kidsPlayState.todayItems[idx];
+    iframe.src = `https://player.bilibili.com/player.html?bvid=${item.bv}&page=1&high_quality=1&autoplay=1`;
+  }
+
+  // 启动倒计时
+  kidsPlayState.timerId = setInterval(()=>{
+    if(!kidsPlayState.isPaused){
+      kidsPlayState.remaining--;
+      updatePlayUI();
+      if(kidsPlayState.remaining <= 0){
+        // 时间到，播放下一个
+        const next = (kidsPlayState.activeIdx + 1) % kidsPlayState.todayItems.length;
+        toast(`⏭ 自动切换下一个视频 (${next+1}/${kidsPlayState.todayItems.length})`);
+        startKidsPlay(next);
+      }
+    }
+  }, 1000);
+
+  updatePlayUI();
+}
+
+// 暂停/继续播放
+function toggleKidsPause(){
+  if(kidsPlayState.activeIdx < 0) return;
+  kidsPlayState.isPaused = !kidsPlayState.isPaused;
+  updatePlayUI();
+}
+
+// 设置播放时长
+function setKidsDuration(sec, btnEl){
+  kidsPlayState.duration = sec;
+  // 如果正在播放，重置计时
+  if(kidsPlayState.activeIdx >= 0){
+    kidsPlayState.remaining = sec;
+    kidsPlayState.isPaused = false;
+    updatePlayUI();
+  }
+  // 更新按钮状态
+  document.querySelectorAll('.play-dur-btn').forEach(b=>b.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+}
+
+// 更新所有播放UI
+function updatePlayUI(){
+  const items = kidsPlayState.todayItems;
+  if(!items.length) return;
+
+  items.forEach((_, i)=>{
+    const card = document.querySelector(`#kids-card-${i}`);
+    if(!card) return;
+    // 更新"正在播放"标记
+    const badge = card.querySelector('.now-playing-indicator');
+    if(i === kidsPlayState.activeIdx && !kidsPlayState.isPaused){
+      if(!badge){
+        const b = document.createElement('div');
+        b.className = 'now-playing-indicator';
+        b.textContent = '▶ 播放中';
+        card.querySelector('.video-box').appendChild(b);
+      }
+    } else if(i === kidsPlayState.activeIdx && kidsPlayState.isPaused){
+      if(badge) badge.textContent = '⏸ 已暂停';
+    } else {
+      if(badge) badge.remove();
+    }
+    // 更新计时器
+    const timer = card.querySelector('.play-timer');
+    const pauseBtn = card.querySelector('.play-pause-btn');
+    const progBar = card.querySelector('.play-progress-bar');
+    if(i === kidsPlayState.activeIdx){
+      if(timer){
+        timer.textContent = '';
+        const dot = document.createElement('span');
+        dot.className = 'timer-dot';
+        timer.appendChild(dot);
+        timer.appendChild(document.createTextNode(` ${fmtTime(kidsPlayState.remaining)}`));
+        timer.className = 'play-timer' + (kidsPlayState.isPaused ? ' paused' : '');
+      }
+      if(pauseBtn){
+        pauseBtn.textContent = kidsPlayState.isPaused ? '▶ 继续' : '⏸ 暂停';
+        pauseBtn.className = 'play-pause-btn' + (kidsPlayState.isPaused ? '' : ' playing');
+      }
+      if(progBar){
+        const pct = kidsPlayState.duration > 0 ? ((kidsPlayState.duration - kidsPlayState.remaining) / kidsPlayState.duration * 100) : 0;
+        progBar.style.width = pct + '%';
+      }
+    } else {
+      if(timer){ timer.textContent = ''; timer.className = 'play-timer'; }
+      if(pauseBtn){ pauseBtn.textContent = '▶ 播放'; pauseBtn.className = 'play-pause-btn'; }
+      if(progBar) progBar.style.width = '0%';
+    }
+  });
+}
+
 function renderKids(){
+  stopKidsPlay();
   const today = todayStr();
   const pool = KIDS_CONTENT[currentAge];
   const seed = hashDate(today + currentAge);
@@ -2016,18 +2195,36 @@ function renderKids(){
 
   // 取前4个展示
   const todayItems = shuffled.slice(0, 4);
+  kidsPlayState.todayItems = todayItems;
 
   // 日期提示
   const weekDays = ['日','一','二','三','四','五','六'];
   const d = new Date();
   const dateLabel = `${d.getMonth()+1}月${d.getDate()}日 周${weekDays[d.getDay()]}`;
 
+  const durOptions = [
+    {label:'5分钟', sec:300},
+    {label:'10分钟', sec:600},
+    {label:'15分钟', sec:900},
+    {label:'20分钟', sec:1200},
+    {label:'30分钟', sec:1800}
+  ];
+
   $('#kids-content').innerHTML = `
     <div class="kids-date-tip">📅 ${dateLabel} · 今日推荐（每天自动更新）</div>
     ${todayItems.map((c,i)=>`
-    <div class="content-card" onclick="addFood('apple');toast('🍎 获得苹果！给宝宝看了绘本/儿歌')">
-      <div class="video-box"><iframe src="https://player.bilibili.com/player.html?bvid=${c.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe></div>
-      <div class="content-info">
+    <div class="content-card" id="kids-card-${i}" onclick="event.stopPropagation()">
+      <div class="play-control-bar">
+        <span class="pl-label">⏱ 播放时长：</span>
+        ${durOptions.map(o=>`<button class="play-dur-btn${i===0&&o.sec===kidsPlayState.duration?' active':''}" onclick="event.stopPropagation();setKidsDuration(${o.sec},this);if(kidsPlayState.activeIdx<0)startKidsPlay(${i})">${o.label}</button>`).join('')}
+        <button class="play-pause-btn" onclick="event.stopPropagation();if(kidsPlayState.activeIdx<0)startKidsPlay(${i});else toggleKidsPause()">▶ 播放</button>
+        <span class="play-timer"></span>
+      </div>
+      <div class="play-progress"><div class="play-progress-bar"></div></div>
+      <div class="video-box" style="position:relative">
+        <iframe id="kids-iframe-${i}" src="https://player.bilibili.com/player.html?bvid=${c.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe>
+      </div>
+      <div class="content-info" onclick="addFood('apple');toast('🍎 获得苹果！给宝宝看了绘本/儿歌')">
         <div class="content-title"><span class="age-badge">${c.age}</span><span class="cat-badge">${c.cat}</span>${c.title}</div>
         <div class="content-meta">${c.desc}</div>
       </div>
