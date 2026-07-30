@@ -1651,10 +1651,11 @@ function renderGrowth(){
   // 绘制图表
   renderGrowthChart(gender, records);
 
-  // 发育评估
-  const age = parseFloat($('#growth-age').value);
-  if(records.length > 0 && !isNaN(age)){
-    const latest = records[records.length-1];
+  // 发育评估 - 基于历史记录最新一条数据
+  const genderRecords = records.filter(r=>r.gender===gender).sort((a,b)=>a.age-b.age);
+  if(genderRecords.length > 0){
+    const latest = genderRecords[genderRecords.length-1];
+    const age = latest.age;
     const p3h = whoInterp(age, gender, 'height');
     const p3w = whoInterp(age, gender, 'weight');
     const p3hc = whoInterp(age, gender, 'hc');
@@ -1678,7 +1679,7 @@ function renderGrowth(){
     const months = Math.floor(age/30);
     const days = Math.round(age % 30);
     const ageStr = months>0 ? `${months}个月${days}天` : `${days}天`;
-    html += `宝宝 ${ageStr}，`;
+    html += `宝宝 ${ageStr}（${latest.date||'最近记录'}），`;
     const assessments = [];
     if(latest.height && p3h) assessments.push('身高'+assessGrowth(latest.height,p3h[0],p3h[1],p3h[2]).level);
     if(latest.weight && p3w) assessments.push('体重'+assessGrowth(latest.weight,p3w[0],p3w[1],p3w[2]).level);
@@ -1688,24 +1689,22 @@ function renderGrowth(){
     else html += '请关注相应指标，如有疑虑可咨询儿科医生。';
     html += '</div>';
     $('#growth-assess').innerHTML = html;
-  } else {
-    $('#growth-assess').innerHTML = '<div class="empty-state">记录身高/体重/头围和天数后，这里会显示发育评估</div>';
-  }
 
-  // 发育注意事项
-  if(!isNaN(age) && age >=0 && age <=2190){
-    const m = MILESTONES.find(m=> age>=m.age[0] && age<=m.age[1]);
-    if(m){
-      const months = Math.floor(age/30);
-      const days = Math.round(age % 30);
-      const ageStr = months>0 ? `${months}个月${days}天` : `${days}天`;
-      $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${ageStr} · ${gender==='boy'?'男孩':'女孩'} · 发育关键期</div>`+
-        m.tips.map(t=>`<div class="growth-milestone"><div class="gm-dot">✓</div><div><strong>${t.t}</strong><br><span style="color:var(--text-light)">${t.d}</span></div></div>`).join('');
+    // 发育注意事项 - 基于最新记录的年龄
+    if(age >=0 && age <=2190){
+      const m = MILESTONES.find(m=> age>=m.age[0] && age<=m.age[1]);
+      if(m){
+        $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${ageStr} · ${gender==='boy'?'男孩':'女孩'} · 发育关键期（最新记录 ${latest.date||''}）</div>`+
+          m.tips.map(t=>`<div class="growth-milestone"><div class="gm-dot">✓</div><div><strong>${t.t}</strong><br><span style="color:var(--text-light)">${t.d}</span></div></div>`).join('');
+      } else {
+        $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
+      }
     } else {
       $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
     }
   } else {
-    $('#growth-milestones').innerHTML = '<div class="empty-state">输入天数后显示该阶段注意事项</div>';
+    $('#growth-assess').innerHTML = '<div class="empty-state">请先保存生长数据，评估和注意事项将基于历史记录自动显示</div>';
+    $('#growth-milestones').innerHTML = '<div class="empty-state">保存数据后显示对应阶段的注意事项</div>';
   }
 
   // 历史记录
