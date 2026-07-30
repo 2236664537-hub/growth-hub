@@ -429,6 +429,40 @@ body{
   font-size:13px;color:#2E7D32;font-weight:600;
 }
 
+/* 拼写练习 */
+.spell-section{
+  margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(195,141,158,.06),rgba(232,168,124,.06));
+  border-radius:12px;border:1px dashed rgba(0,0,0,.08);
+}
+.spell-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+.spell-hint{font-size:18px;font-weight:700;color:var(--secondary);margin-bottom:10px;text-align:center}
+.spell-input-row{display:flex;gap:8px;margin-bottom:8px}
+.spell-input{
+  flex:1;padding:10px 14px;border:2px solid rgba(0,0,0,.1);border-radius:10px;
+  font-size:16px;outline:none;transition:all .2s;font-family:inherit;
+}
+.spell-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(133,183,157,.15)}
+.spell-input.correct{border-color:#4CAF50;background:rgba(76,175,80,.06)}
+.spell-input.wrong{border-color:#E57373;background:rgba(229,115,115,.06);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.spell-submit{flex-shrink:0}
+.spell-feedback{font-size:13px;font-weight:600;min-height:20px;text-align:center;margin-bottom:6px}
+.spell-feedback.correct{color:#2E7D32}
+.spell-feedback.wrong{color:#C62828}
+.spell-score{font-size:12px;color:var(--text-light);text-align:center}
+.spell-score span{font-weight:700;color:var(--accent);font-size:16px}
+
+/* 实用英语 - 复述模式 */
+.phrase-reveal-btn{
+  font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid var(--accent);
+  background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap;
+  transition:all .2s;flex-shrink:0;
+}
+.phrase-reveal-btn:hover{background:var(--accent);color:#fff}
+.phrase-reveal-btn.revealed{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1);color:var(--text-light)}
+.phrase-en-hidden{filter:blur(6px);transition:filter .3s;user-select:none}
+.phrase-en-hidden.revealed{filter:blur(0)}
+
 /* ===== 月经周期 ===== */
 .cycle-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
 .cycle-day-cell{
@@ -960,7 +994,7 @@ body{
     <section class="page" id="page-english">
       <div class="page-header">
         <div class="page-title">📖 每日英语</div>
-        <div class="page-desc">每天一个单词 · 旅游实用英语 · 坚持就是胜利</div>
+        <div class="page-desc">每天一个单词 · 拼写练习 · 实用英语复述 · 坚持就是胜利</div>
       </div>
       <div class="eng-streak" id="eng-streak">🔥 连续学习 0 天 · 继续加油！</div>
       <div class="eng-grid">
@@ -973,6 +1007,17 @@ body{
               <button class="btn btn-primary" id="word-next" style="flex:1;background:linear-gradient(135deg,var(--accent),#A5D4B8)">🔄 换一个</button>
             </div>
             <button class="btn" id="word-fav" style="width:100%;margin-top:10px;background:#FAF6F0;color:var(--text)">⭐ 收藏到单词本</button>
+            <!-- 拼写练习 -->
+            <div class="spell-section" id="spell-section">
+              <div class="spell-title">✏️ 拼写练习（看中文写英文，拼对得食物）</div>
+              <div class="spell-hint" id="spell-hint"></div>
+              <div class="spell-input-row">
+                <input type="text" id="spell-input" class="spell-input" placeholder="输入英文单词..." autocomplete="off" autocapitalize="off">
+                <button class="btn btn-primary spell-submit" id="spell-submit">✓ 提交</button>
+              </div>
+              <div class="spell-feedback" id="spell-feedback"></div>
+              <div class="spell-score">🏆 今日拼对：<span id="spell-score">0</span> 次</div>
+            </div>
           </div>
           <div class="card">
             <div class="card-title"><span class="emoji">📖</span>单词本</div>
@@ -980,7 +1025,7 @@ body{
           </div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="emoji">💬</span>旅游实用英语</div>
+          <div class="card-title"><span class="emoji">💬</span>旅游实用英语 <span style="font-size:11px;font-weight:400;color:var(--accent)">— 先回忆再核对</span></div>
           <div class="phrase-list" id="phrase-list"></div>
         </div>
       </div>
@@ -2364,6 +2409,18 @@ function renderEnglish(){
       <div class="word-cn">${w.cn}</div>
       <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}')" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
     `;
+    // 更新拼写提示
+    $('#spell-hint').textContent = '💡 ' + w.cn;
+    // 清空拼写输入和反馈
+    $('#spell-input').value = '';
+    $('#spell-input').className = 'spell-input';
+    $('#spell-feedback').textContent = '';
+    $('#spell-feedback').className = 'spell-feedback';
+    // 更新今日拼写分数
+    const todayScore = Store.get('spellScore_'+todayStr(), 0);
+    $('#spell-score').textContent = todayScore;
+    // 焦点回到输入框
+    setTimeout(()=>$('#spell-input').focus(), 100);
   };
   // 根据日期决定今日单词
   const today = new Date();
@@ -2394,14 +2451,65 @@ function renderEnglish(){
     }
   };
 
-  // 日常用语 - 每条带朗读按钮
+  // === 拼写检查 ===
+  $('#spell-submit').onclick = checkSpelling;
+  $('#spell-input').onkeydown = (e)=>{
+    if(e.key === 'Enter') checkSpelling();
+  };
+
+  function checkSpelling(){
+    if(!currentWord) return;
+    const input = $('#spell-input').value.trim();
+    const fb = $('#spell-feedback');
+    const inp = $('#spell-input');
+    if(!input){ fb.textContent = '请输入单词'; fb.className = 'spell-feedback wrong'; return; }
+
+    if(input.toLowerCase() === currentWord.en.toLowerCase()){
+      // 拼对了！
+      inp.className = 'spell-input correct';
+      fb.textContent = '✅ 完全正确！太棒了！';
+      fb.className = 'spell-feedback correct';
+      // 奖励食物：随机给一种
+      const foods = ['apple','fish','carrot','cookie'];
+      const reward = foods[Math.floor(Math.random()*foods.length)];
+      addFood(reward);
+      const foodEmoji = {apple:'🍎',fish:'🐟',carrot:'🥕',cookie:'🍪'};
+      toast(foodEmoji[reward]+' 拼写正确！获得 '+foodEmoji[reward]+' 一份');
+      // 记录今日拼对次数
+      const key = 'spellScore_'+todayStr();
+      const score = (Store.get(key,0)||0) + 1;
+      Store.set(key, score);
+      $('#spell-score').textContent = score;
+      // 1.5秒后自动换下一个单词
+      setTimeout(()=>{
+        wordIdx = (wordIdx+1) % WORDS.length;
+        showWord(wordIdx);
+      }, 1500);
+    } else {
+      // 拼错了
+      inp.className = 'spell-input wrong';
+      const correct = currentWord.en;
+      let hint = '❌ 再试一次！';
+      if(input.length >= 2 && correct.toLowerCase().startsWith(input.toLowerCase())){
+        hint += ' 开头正确，继续加油！';
+      } else if(input.length >= 1){
+        hint += ' 提示：以 "'+correct[0].toUpperCase()+'" 开头，共 '+correct.length+' 个字母';
+      }
+      fb.textContent = hint;
+      fb.className = 'spell-feedback wrong';
+      setTimeout(()=>{ inp.className = 'spell-input'; inp.focus(); }, 500);
+    }
+  }
+
+  // 实用英语 - 默认隐藏英文（复述模式）
   $('#phrase-list').innerHTML = PHRASES.map((p,i)=>`
     <div class="phrase-item">
       <button class="speak-phrase" onclick="speak('${p.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button>
       <div class="phrase-content">
-        <div class="phrase-en">${p.en}</div>
+        <div class="phrase-en phrase-en-hidden" id="phrase-en-${i}">${p.en}</div>
         <div class="phrase-cn">${p.cn}</div>
       </div>
+      <button class="phrase-reveal-btn" id="phrase-btn-${i}" onclick="togglePhraseReveal(${i})">👁 显示</button>
     </div>
   `).join('');
 
@@ -2420,9 +2528,26 @@ function renderEnglish(){
     if(engHistory.includes(ds)){ streak++; d.setDate(d.getDate()-1); }
     else break;
   }
-  $('#eng-streak').innerHTML = `🔥 连续学习 ${streak} 天 · 已学 ${engHistory.length} 天 · 继续加油！`;
+  $('#eng-streak').innerHTML = '🔥 连续学习 '+streak+' 天 · 已学 '+engHistory.length+' 天 · 继续加油！';
 
   renderWordHistory();
+}
+
+// 切换实用英语的显示/隐藏
+function togglePhraseReveal(idx){
+  const enEl = document.getElementById('phrase-en-'+idx);
+  const btn = document.getElementById('phrase-btn-'+idx);
+  if(!enEl || !btn) return;
+  const isHidden = enEl.classList.contains('phrase-en-hidden') && !enEl.classList.contains('revealed');
+  if(isHidden){
+    enEl.classList.add('revealed');
+    btn.textContent = '🙈 隐藏';
+    btn.classList.add('revealed');
+  } else {
+    enEl.classList.remove('revealed');
+    btn.textContent = '👁 显示';
+    btn.classList.remove('revealed');
+  }
 }
 
 function renderWordHistory(){
