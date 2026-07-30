@@ -231,6 +231,14 @@ body{
 .ws-item{text-align:center;padding:12px;background:#FAF6F0;border-radius:12px}
 .ws-val{font-size:22px;font-weight:700;color:var(--primary-dark)}
 .ws-label{font-size:11px;color:var(--text-light);margin-top:2px}
+.bmi-display{display:flex;align-items:center;gap:20px;margin-bottom:16px}
+.bmi-num{font-size:48px;font-weight:800;line-height:1}
+.bmi-label{font-size:14px;font-weight:600;padding:4px 12px;border-radius:20px;display:inline-block}
+.bmi-bar-wrap{margin-top:14px}
+.bmi-bar{height:12px;border-radius:6px;background:linear-gradient(90deg,#64B5F6 0%,#64B5F6 18%,#81C784 18%,#81C784 60%,#FFB74D 60%,#FFB74D 75%,#E57373 75%,#E57373 100%);position:relative;margin-bottom:8px}
+.bmi-pointer{position:absolute;top:-4px;width:4px;height:20px;background:#333;border-radius:2px;transform:translateX(-50%);transition:left .5s}
+.bmi-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--text-light)}
+.bmi-tips{margin-top:14px;padding:12px;border-radius:10px;font-size:12px;line-height:1.7}
 .weight-table{width:100%;border-collapse:collapse;font-size:13px}
 .weight-table th{
   text-align:left;padding:10px 12px;background:#FAF6F0;color:var(--text-light);
@@ -595,6 +603,12 @@ body{
         <div>
           <div class="card">
             <div class="card-title"><span class="emoji">⚖️</span>记录今日体重</div>
+            <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center">
+              <label style="font-size:13px;color:var(--text-light);white-space:nowrap">我的身高</label>
+              <input type="number" id="height-input" placeholder="cm" step="0.1" min="100" max="250" style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:15px;color:var(--text);background:#FAF6F0;font-family:inherit;width:80px">
+              <span style="font-size:13px;color:var(--text-light)">cm</span>
+              <button class="btn btn-primary" id="height-save" style="padding:10px 14px;font-size:12px">保存</button>
+            </div>
             <div class="weight-input">
               <input type="number" id="weight-input" placeholder="输入体重" step="0.1" min="20" max="200">
               <span class="unit">kg</span>
@@ -605,6 +619,10 @@ body{
               <div class="ws-item"><div class="ws-val" id="ws-avg">--</div><div class="ws-label">平均</div></div>
               <div class="ws-item"><div class="ws-val" id="ws-change">--</div><div class="ws-label">变化</div></div>
             </div>
+          </div>
+          <div class="card" id="bmi-card">
+            <div class="card-title"><span class="emoji">📏</span>BMI 健康指数</div>
+            <div id="bmi-content"></div>
           </div>
           <div class="card">
             <div class="card-title"><span class="emoji">📊</span>历史记录</div>
@@ -976,8 +994,24 @@ $$('.mood-pick').forEach(btn=>{
 });
 
 /* ==================== 体重记录 ==================== */
+function getBmiInfo(bmi){
+  if(bmi < 18.5) return {label:'偏瘦', color:'#64B5F6', bg:'#E3F2FD', percent: Math.max(5, bmi/18.5*18),
+    tip:'体重偏轻，建议适当增加营养摄入，保证蛋白质和碳水化合物供应。产后恢复期尤其要注意营养充足。'};
+  if(bmi < 24) return {label:'标准', color:'#81C784', bg:'#E8F5E9', percent: 18 + (bmi-18.5)/(24-18.5)*42,
+    tip:'体重在标准范围内，保持目前的饮食和运动习惯就好！继续保持打卡记录 🎉'};
+  if(bmi < 28) return {label:'偏胖', color:'#FFB74D', bg:'#FFF3E0', percent: 60 + (bmi-24)/(28-24)*15,
+    tip:'体重略高于标准，建议适当控制饮食热量，增加有氧运动，普拉提也是很好的选择。'};
+  return {label:'肥胖', color:'#E57373', bg:'#FFEBEE', percent: Math.min(95, 75 + (bmi-28)/12*25),
+    tip:'体重超出标准范围，建议咨询医生或营养师制定科学减重计划，循序渐进。'};
+}
+
 function renderWeight(){
   const weights = Store.get('weights',[]);
+  const height = Store.get('height', 0);
+  // 回填身高
+  const heightInput = $('#height-input');
+  if(heightInput) heightInput.value = height || '';
+
   // 统计
   if(weights.length){
     const latest = weights[weights.length-1].weight;
@@ -992,6 +1026,43 @@ function renderWeight(){
     $('#ws-latest').textContent = '--';
     $('#ws-avg').textContent = '--';
     $('#ws-change').textContent = '--';
+  }
+
+  // BMI 计算
+  const bmiBox = $('#bmi-content');
+  if(height && weights.length){
+    const latestWeight = weights[weights.length-1].weight;
+    const h = height/100;
+    const bmi = (latestWeight / (h*h)).toFixed(1);
+    const info = getBmiInfo(parseFloat(bmi));
+    const stdMin = (18.5 * h * h).toFixed(1);
+    const stdMax = (24 * h * h).toFixed(1);
+    bmiBox.innerHTML = `
+      <div class="bmi-display">
+        <div>
+          <div class="bmi-num" style="color:${info.color}">${bmi}</div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:2px">最新 BMI</div>
+        </div>
+        <div>
+          <span class="bmi-label" style="background:${info.bg};color:${info.color}">${info.label}</span>
+          <div style="font-size:12px;color:var(--text-light);margin-top:6px">标准范围：${stdMin}～${stdMax} kg</div>
+          <div style="font-size:12px;color:var(--text-light)">当前体重：${latestWeight} kg / 身高：${height} cm</div>
+        </div>
+      </div>
+      <div class="bmi-bar-wrap">
+        <div class="bmi-bar">
+          <div class="bmi-pointer" style="left:${info.percent}%"></div>
+        </div>
+        <div class="bmi-scale">
+          <span>偏瘦 &lt;18.5</span><span>标准 18.5-24</span><span>偏胖 24-28</span><span>肥胖 ≥28</span>
+        </div>
+      </div>
+      <div class="bmi-tips" style="background:${info.bg};color:var(--text)">💡 ${info.tip}</div>
+    `;
+  } else if(!height){
+    bmiBox.innerHTML = '<div class="empty-state">请先输入身高，才能计算 BMI 指数</div>';
+  } else {
+    bmiBox.innerHTML = '<div class="empty-state">记录体重后，BMI 将自动计算</div>';
   }
 
   // 表格
@@ -1023,16 +1094,34 @@ function renderWeight(){
   if(window._weightChart) window._weightChart.destroy();
   const labels = weights.map(w=>w.date.slice(5));
   const data = weights.map(w=>w.weight);
+  const datasets = [{
+    label:'体重', data,
+    borderColor:'#C38D9E', backgroundColor:'rgba(195,141,158,.15)',
+    fill:true, tension:.3, pointRadius:4, pointBackgroundColor:'#C38D9E'
+  }];
+  // 如果有身高，添加标准体重参考线
+  if(height){
+    const h = height/100;
+    const stdMin = (18.5 * h * h).toFixed(1);
+    const stdMax = (24 * h * h).toFixed(1);
+    datasets.push({
+      label:'标准下限', data: weights.map(()=>stdMin),
+      borderColor:'#81C784', borderDash:[6,4], pointRadius:0, fill:false, tension:0
+    });
+    datasets.push({
+      label:'标准上限', data: weights.map(()=>stdMax),
+      borderColor:'#FFB74D', borderDash:[6,4], pointRadius:0, fill:false, tension:0
+    });
+  }
   window._weightChart = new Chart(ctx, {
     type:'line',
-    data:{ labels, datasets:[{
-      label:'体重', data,
-      borderColor:'#C38D9E', backgroundColor:'rgba(195,141,158,.15)',
-      fill:true, tension:.3, pointRadius:4, pointBackgroundColor:'#C38D9E'
-    }]},
+    data:{ labels, datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false} },
+      plugins:{
+        legend:{display:!!height, position:'top', labels:{font:{size:11}}},
+        tooltip:{ callbacks:{ label: ctx=> ctx.dataset.label+': '+ctx.parsed.y+' kg' } }
+      },
       scales:{
         y:{ grid:{color:'#F5EDDF'}, title:{display:true,text:'kg'} },
         x:{ grid:{display:false} }
@@ -1040,6 +1129,14 @@ function renderWeight(){
     }
   });
 }
+
+$('#height-save').onclick = ()=>{
+  const h = parseFloat($('#height-input').value);
+  if(!h || h<100 || h>250){ toast('请输入合理的身高'); return; }
+  Store.set('height', h);
+  renderWeight();
+  toast('身高已保存 ✅');
+};
 
 $('#weight-save').onclick = ()=>{
   const v = parseFloat($('#weight-input').value);
