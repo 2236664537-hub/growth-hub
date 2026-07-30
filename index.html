@@ -612,7 +612,7 @@ body{
           </div>
         </div>
         <div style="margin-top:12px;font-size:11px;color:var(--text-light)">
-          💡 完成普拉提打卡 → 获得 🥩 <b>肉肉</b> ｜ 学习英语 → 获得 🐟 <b>小鱼干</b> ｜ 点击食物喂宠物
+          💡 普拉提打卡→🥩肉肉 ｜ 英语朗读→🐟小鱼干 ｜ Excel学习→🍪饼干 ｜ 早教绘本→🍎苹果
         </div>
       </div>
     </section>
@@ -1036,14 +1036,14 @@ const PET_STAGES = [
 ];
 
 function getPet(){
-  return Store.get('pet', {stage:0, hunger:0, food:{meat:0, fish:0, carrot:0, cookie:0}, totalFed:0, lastFed:todayStr()});
+  return Store.get('pet', {stage:0, hunger:0, food:{meat:0, fish:0, carrot:0, cookie:0, apple:0}, totalFed:0, lastFed:todayStr()});
 }
 
 function savePet(pet){ Store.set('pet', pet); }
 
 function feedPet(foodType, amount){
   const pet = getPet();
-  const foodGain = {meat:8, fish:6, carrot:5, cookie:4};
+  const foodGain = {meat:8, fish:6, carrot:5, cookie:4, apple:5};
   if(!pet.food[foodType] || pet.food[foodType] < amount){
     toast('食物不够了，快去学习和运动吧！');
     return;
@@ -1094,7 +1094,7 @@ function renderPet(){
   $('#pet-avatar').innerHTML = stage.emoji;
   $('#pet-avatar').style.transform = hungerPct>80?'scale(1.1) rotate(-3deg)':'scale(1)';
 
-  const foodLabels = {meat:'🥩 肉肉', fish:'🐟 小鱼干', carrot:'🥕 胡萝卜', cookie:'🍪 饼干'};
+  const foodLabels = {meat:'🥩 肉肉', fish:'🐟 小鱼干', carrot:'🥕 胡萝卜', cookie:'🍪 饼干', apple:'🍎 苹果'};
   $('#pet-foods').innerHTML = Object.keys(foodLabels).map(k=>{
     const count = pet.food[k]||0;
     return `<button class="pet-food-btn" onclick="feedPet('${k}',1)" title="喂${foodLabels[k]}" ${count===0?'disabled style="opacity:0.4"':''}>
@@ -1846,8 +1846,8 @@ const KIDS_CONTENT = {
 };
 let currentAge = '0-2';
 function renderKids(){
-  $('#kids-content').innerHTML = KIDS_CONTENT[currentAge].map(c=>`
-    <div class="content-card">
+  $('#kids-content').innerHTML = KIDS_CONTENT[currentAge].map((c,i)=>`
+    <div class="content-card" onclick="addFood('apple');toast('🍎 获得苹果！给宝宝看了绘本/儿歌')">
       <div class="video-box"><iframe src="https://player.bilibili.com/player.html?bvid=${c.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe></div>
       <div class="content-info">
         <div class="content-title"><span class="age-badge">${c.age}</span>${c.title}</div>
