@@ -2546,12 +2546,18 @@ function renderEnglish(){
     </div>
   `).join('');
 
-  // 打卡
+  // 打卡（独立函数，学完5个单词后调用）
+  updateEngStreak();
+
+  renderWordHistory();
+}
+
+// 更新英语打卡状态
+function updateEngStreak(){
   const engHistory = Store.get('engHistory',[]);
-  if(!engHistory.includes(todayStr1)){
-    engHistory.push(todayStr1);
-    Store.set('engHistory', engHistory);
-  }
+  const ts = todayStr();
+  const alreadyChecked = engHistory.includes(ts);
+
   let streak = 0;
   const d = new Date();
   while(true){
@@ -2559,8 +2565,27 @@ function renderEnglish(){
     if(engHistory.includes(ds)){ streak++; d.setDate(d.getDate()-1); }
     else break;
   }
-  $('#eng-streak').innerHTML = '🔥 连续学习 '+streak+' 天 · 已学 '+engHistory.length+' 天 · 继续加油！';
-  renderWordHistory();
+
+  if(alreadyChecked){
+    $('#eng-streak').innerHTML = '🔥 连续学习 '+streak+' 天 · 已学 '+engHistory.length+' 天 · ✅ 今日已完成！';
+    $('#eng-streak').style.background = 'linear-gradient(135deg,#C8E6C9,#A5D6A7)';
+  } else {
+    $('#eng-streak').innerHTML = '🔥 连续学习 '+streak+' 天 · 已学 '+engHistory.length+' 天 · 学完5个单词打卡';
+    $('#eng-streak').style.background = 'linear-gradient(135deg,#E8F5E9,#C8E6C9)';
+  }
+}
+
+// 英语打卡（学完5个单词时调用）
+function checkEnglishDaily(){
+  const engHistory = Store.get('engHistory',[]);
+  const ts = todayStr();
+  if(!engHistory.includes(ts)){
+    engHistory.push(ts);
+    Store.set('engHistory', engHistory);
+    updateEngStreak();
+    toast('🎉 今日英语打卡成功！连续学习又进一步！');
+    addFood('fish'); // 打卡奖励
+  }
 }
 
 // 更新5个单词进度条
@@ -2639,6 +2664,8 @@ function checkSpelling(){
     const key = 'spellScore_'+todayStr();
     Store.set(key, todayDoneCount);
     $('#spell-score').textContent = todayDoneCount;
+    // 学完5个单词 → 打卡成功
+    if(todayDoneCount >= 5) checkEnglishDaily();
     // 进入下一个单词
     setTimeout(()=>{
       todayWordIdx++;
