@@ -433,7 +433,12 @@ body{
 .growth-record{
   display:flex;align-items:center;gap:10px;padding:12px;
   background:#FAF6F0;border-radius:10px;margin-bottom:8px;font-size:13px;
+  cursor:pointer;transition:all .2s;border:2px solid transparent;
 }
+.growth-record.gr-selected{
+  background:rgba(232,168,124,.15);border-color:var(--primary);box-shadow:0 2px 8px rgba(232,168,124,.2);
+}
+.growth-record:active{transform:scale(.99)}
 .growth-record .gr-date{font-weight:600;color:var(--text);min-width:90px}
 .growth-record .gr-data{flex:1;display:flex;gap:12px}
 .growth-record .gr-val{color:var(--text-light);font-size:12px}
@@ -1632,6 +1637,72 @@ const MILESTONES = [
 ];
 
 let growthChartType = 'height';
+let growthSelectedRecord = null; // 当前选中的历史记录对象（null=自动选最新）
+
+// 判断两条记录是否为同一条（同一天数+同性别+同日期）
+function isSameRecord(a, b){
+  return a && b && a.gender===b.gender && a.age===b.age && a.date===b.date;
+}
+
+// 提取发育评估渲染为独立函数，支持传入指定记录
+function renderGrowthAssess(gender, record, genderRecords){
+  if(!record){
+    $('#growth-assess').innerHTML = '<div class="empty-state">请先保存生长数据，评估和注意事项将基于历史记录自动显示</div>';
+    $('#growth-milestones').innerHTML = '<div class="empty-state">保存数据后显示对应阶段的注意事项</div>';
+    return;
+  }
+  const age = record.age;
+  const p3h = whoInterp(age, gender, 'height');
+  const p3w = whoInterp(age, gender, 'weight');
+  const p3hc = whoInterp(age, gender, 'hc');
+  const months = Math.floor(age/30);
+  const days = Math.round(age % 30);
+  const ageStr = months>0 ? `${months}个月${days}天` : `${days}天`;
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+  if(record.height && p3h){
+    const a = assessGrowth(record.height, p3h[0], p3h[1], p3h[2]);
+    html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">📏 身高</div><div style="font-size:22px;font-weight:700;color:${a.color}">${record.height} cm</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
+  }
+  if(record.weight && p3w){
+    const a = assessGrowth(record.weight, p3w[0], p3w[1], p3w[2]);
+    html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">⚖️ 体重</div><div style="font-size:22px;font-weight:700;color:${a.color}">${record.weight} kg</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
+  }
+  if(record.hc && p3hc){
+    const a = assessGrowth(record.hc, p3hc[0], p3hc[1], p3hc[2]);
+    html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">🧠 头围</div><div style="font-size:22px;font-weight:700;color:${a.color}">${record.hc} cm</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
+  }
+  html += '</div>';
+  // 综合评估
+  html += '<div class="growth-tips" style="background:rgba(133,183,157,.08)">';
+  html += '<strong>📊 综合评估：</strong>';
+  html += `宝宝 ${ageStr}（${record.date||'—'}），`;
+  const assessments = [];
+  if(record.height && p3h) assessments.push('身高'+assessGrowth(record.height,p3h[0],p3h[1],p3h[2]).level);
+  if(record.weight && p3w) assessments.push('体重'+assessGrowth(record.weight,p3w[0],p3w[1],p3w[2]).level);
+  if(record.hc && p3hc) assessments.push('头围'+assessGrowth(record.hc,p3hc[0],p3hc[1],p3hc[2]).level);
+  html += assessments.join('、')+'。';
+  if(assessments.every(a=>a.includes('标准'))) html += '各项指标均在标准范围内，发育良好！';
+  else html += '请关注相应指标，如有疑虑可咨询儿科医生。';
+  html += '</div>';
+  $('#growth-assess').innerHTML = html;
+
+  // 发育注意事项
+  if(age >=0 && age <=2190){
+    const m = MILESTONES.find(m=> age>=m.age[0] && age<=m.age[1]);
+    if(m){
+      const sorted = genderRecords.slice().sort((a,b)=>a.age-b.age);
+      const isLatest = isSameRecord(record, sorted[sorted.length-1]);
+      const label = isLatest ? '最新记录' : '历史记录';
+      $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${ageStr} · ${gender==='boy'?'男孩':'女孩'} · 发育关键期（${label} ${record.date||''}）</div>`+
+        m.tips.map(t=>`<div class="growth-milestone"><div class="gm-dot">✓</div><div><strong>${t.t}</strong><br><span style="color:var(--text-light)">${t.d}</span></div></div>`).join('');
+    } else {
+      $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
+    }
+  } else {
+    $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
+  }
+}
 
 function renderGrowth(){
   const gender = $('#growth-gender').value;
@@ -1651,74 +1722,39 @@ function renderGrowth(){
   }
   $$('.growth-tab').forEach(t=> t.classList.toggle('active', t.dataset.chart===growthChartType));
 
-  // 绘制图表 - 传入所有记录，图表内部按性别筛选
-  renderGrowthChart(gender, records);
-
-  // 发育评估 - 基于历史记录最新一条数据（按天数排序）
+  // 当前性别的记录（按天数排序）
   const genderRecords = records.filter(r=>r.gender===gender).sort((a,b)=>a.age-b.age);
-  if(genderRecords.length > 0){
-    const latest = genderRecords[genderRecords.length-1];
-    const age = latest.age;
-    const p3h = whoInterp(age, gender, 'height');
-    const p3w = whoInterp(age, gender, 'weight');
-    const p3hc = whoInterp(age, gender, 'hc');
-    let html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
-    if(latest.height && p3h){
-      const a = assessGrowth(latest.height, p3h[0], p3h[1], p3h[2]);
-      html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">📏 身高</div><div style="font-size:22px;font-weight:700;color:${a.color}">${latest.height} cm</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
-    }
-    if(latest.weight && p3w){
-      const a = assessGrowth(latest.weight, p3w[0], p3w[1], p3w[2]);
-      html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">⚖️ 体重</div><div style="font-size:22px;font-weight:700;color:${a.color}">${latest.weight} kg</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
-    }
-    if(latest.hc && p3hc){
-      const a = assessGrowth(latest.hc, p3hc[0], p3hc[1], p3hc[2]);
-      html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">🧠 头围</div><div style="font-size:22px;font-weight:700;color:${a.color}">${latest.hc} cm</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
-    }
-    html += '</div>';
-    // 综合评估
-    html += '<div class="growth-tips" style="background:rgba(133,183,157,.08)">';
-    html += '<strong>📊 综合评估：</strong>';
-    const months = Math.floor(age/30);
-    const days = Math.round(age % 30);
-    const ageStr = months>0 ? `${months}个月${days}天` : `${days}天`;
-    html += `宝宝 ${ageStr}（${latest.date||'最近记录'}），`;
-    const assessments = [];
-    if(latest.height && p3h) assessments.push('身高'+assessGrowth(latest.height,p3h[0],p3h[1],p3h[2]).level);
-    if(latest.weight && p3w) assessments.push('体重'+assessGrowth(latest.weight,p3w[0],p3w[1],p3w[2]).level);
-    if(latest.hc && p3hc) assessments.push('头围'+assessGrowth(latest.hc,p3hc[0],p3hc[1],p3hc[2]).level);
-    html += assessments.join('、')+'。';
-    if(assessments.every(a=>a.includes('标准'))) html += '各项指标均在标准范围内，发育良好！';
-    else html += '请关注相应指标，如有疑虑可咨询儿科医生。';
-    html += '</div>';
-    $('#growth-assess').innerHTML = html;
 
-    // 发育注意事项 - 基于最新记录的年龄
-    if(age >=0 && age <=2190){
-      const m = MILESTONES.find(m=> age>=m.age[0] && age<=m.age[1]);
-      if(m){
-        $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${ageStr} · ${gender==='boy'?'男孩':'女孩'} · 发育关键期（最新记录 ${latest.date||''}）</div>`+
-          m.tips.map(t=>`<div class="growth-milestone"><div class="gm-dot">✓</div><div><strong>${t.t}</strong><br><span style="color:var(--text-light)">${t.d}</span></div></div>`).join('');
-      } else {
-        $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
-      }
+  // 确定选中的记录：优先用 growthSelectedRecord，且必须在当前性别记录中，否则自动选最新
+  let selectedRecord = null;
+  if(genderRecords.length > 0){
+    if(growthSelectedRecord && genderRecords.some(r=> isSameRecord(r, growthSelectedRecord))){
+      selectedRecord = genderRecords.find(r=> isSameRecord(r, growthSelectedRecord));
     } else {
-      $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
+      selectedRecord = genderRecords[genderRecords.length-1];
+      growthSelectedRecord = selectedRecord;
     }
   } else {
-    $('#growth-assess').innerHTML = '<div class="empty-state">请先保存生长数据，评估和注意事项将基于历史记录自动显示</div>';
-    $('#growth-milestones').innerHTML = '<div class="empty-state">保存数据后显示对应阶段的注意事项</div>';
+    growthSelectedRecord = null;
   }
 
-  // 历史记录
+  // 绘制图表 - 高亮选中的数据点
+  renderGrowthChart(gender, records, selectedRecord);
+
+  // 发育评估 + 注意事项
+  renderGrowthAssess(gender, selectedRecord, genderRecords);
+
+  // 历史记录（全部记录按天数排序，深拷贝避免影响原数组）
   const tbody = $('#growth-records');
   if(records.length===0){
     tbody.innerHTML = '<div class="empty-state">暂无记录</div>';
   } else {
-    records.sort((a,b)=>a.age - b.age);
-    tbody.innerHTML = records.map((r,i)=>{
+    const sortedAll = records.slice().sort((a,b)=>a.age - b.age);
+    tbody.innerHTML = sortedAll.map((r,i)=>{
       const genderLabel = r.gender==='boy'?'👦':'👧';
-      return `<div class="growth-record">
+      const isCurrentGender = r.gender === gender;
+      const isSelected = isCurrentGender && isSameRecord(r, selectedRecord);
+      return `<div class="growth-record${isSelected?' gr-selected':''}" data-gender="${r.gender}" data-idx="${i}" data-age="${r.age}" data-date="${r.date||''}" style="${!isCurrentGender?'opacity:.4':''}">
         <span class="gr-date">${r.date||'—'}</span>
         <span style="font-size:12px;color:var(--text-light);min-width:70px">${genderLabel} ${formatAge(r.age)}</span>
         <span class="gr-data">
@@ -1729,18 +1765,41 @@ function renderGrowth(){
         <button class="del-btn" data-idx="${i}">✕</button>
       </div>`;
     }).join('');
-    $$('#growth-records .del-btn').forEach(b=> b.onclick = ()=>{
+
+    // 点击历史记录行：切换选中
+    $$('#growth-records .growth-record').forEach(row=>{
+      row.onclick = function(e){
+        if(e.target.classList.contains('del-btn')) return;
+        const rGender = this.dataset.gender;
+        if(rGender !== gender){
+          $('#growth-gender').value = rGender;
+        }
+        // 从 records 中找到对应记录并设为选中
+        const all = Store.get('growthRecords',[]);
+        const target = all.find(r=> r.gender===rGender && r.age===+this.dataset.age && r.date===this.dataset.date);
+        if(target){
+          growthSelectedRecord = target;
+          renderGrowth();
+        }
+      };
+    });
+
+    // 删除按钮
+    $$('#growth-records .del-btn').forEach(b=> b.onclick = (e)=>{
+      e.stopPropagation();
       const idx = +b.dataset.idx;
-      const recs = Store.get('growthRecords',[]);
+      const recs = Store.get('growthRecords',[]).slice();
+      recs.sort((a,b)=>a.age - b.age);
       recs.splice(idx,1);
       Store.set('growthRecords', recs);
+      growthSelectedRecord = null; // 重置，下次自动选最新
       renderGrowth();
       toast('已删除');
     });
   }
 }
 
-function renderGrowthChart(gender, records){
+function renderGrowthChart(gender, records, selectedRecord){
   const ctx = $('#growth-chart');
   if(window._growthChart) window._growthChart.destroy();
 
@@ -1765,6 +1824,9 @@ function renderGrowthChart(gender, records){
   const sorted = records.filter(r=>r.gender===gender && r[tm.key]!=null).sort((a,b)=>a.age-b.age);
   const myLabels = sorted.map(r=>r.age);
   const myData = sorted.map(r=>r[tm.key]);
+  const pointRadii = sorted.map(r=> selectedRecord && isSameRecord(r, selectedRecord) ? 10 : 6);
+  const pointColors = sorted.map(r=> selectedRecord && isSameRecord(r, selectedRecord) ? '#D81B60' : '#E8A87C');
+  const pointBorders = sorted.map(r=> selectedRecord && isSameRecord(r, selectedRecord) ? '#fff' : '#fff');
 
   const datasets = [
     {label:'P3 (下限)', data:stdP3, borderColor:'rgba(100,181,246,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3, spanGaps:true},
@@ -1775,7 +1837,10 @@ function renderGrowthChart(gender, records){
     datasets.push({
       label:'宝宝', data:myData,
       borderColor:'#E8A87C', backgroundColor:'rgba(232,168,124,.3)',
-      pointRadius:6, pointBackgroundColor:'#E8A87C', pointBorderColor:'#fff', pointBorderWidth:2,
+      pointRadius: pointRadii,
+      pointBackgroundColor: pointColors,
+      pointBorderColor: pointBorders,
+      pointBorderWidth:2,
       showLine:myLabels.length>1, tension:0, fill:false
     });
   }
@@ -1837,6 +1902,8 @@ $('#growth-save').onclick = ()=>{
   else records.push(record);
 
   Store.set('growthRecords', records);
+  // 保存后自动选中刚保存的这条记录
+  growthSelectedRecord = record;
   renderGrowth();
   toast('生长数据已保存 ✅');
 };
