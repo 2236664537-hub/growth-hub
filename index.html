@@ -433,6 +433,15 @@ body{
 .learn-confirm{margin-top:10px}
 .learn-confirm .btn{font-size:15px;font-weight:700;padding:14px}
 
+/* 5个单词进度条 */
+.word-progress-bar{display:flex;gap:6px;margin-bottom:14px}
+.word-progress-dot{
+  flex:1;height:6px;border-radius:3px;background:rgba(0,0,0,.06);
+  transition:all .3s;
+}
+.word-progress-dot.done{background:var(--accent)}
+.word-progress-dot.current{background:var(--primary);box-shadow:0 0 6px rgba(232,168,124,.5)}
+
 /* 拼写练习 - 字母方块 */
 .spell-section{
   margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(195,141,158,.06),rgba(232,168,124,.06));
@@ -1027,17 +1036,18 @@ body{
     <section class="page" id="page-english">
       <div class="page-header">
         <div class="page-title">📖 每日英语</div>
-        <div class="page-desc">每天一个单词 · 拼写练习 · 实用英语复述 · 坚持就是胜利</div>
+        <div class="page-desc">每天5个单词 · 字母拼写 · 实用英语复述 · 坚持就是胜利</div>
       </div>
       <div class="eng-streak" id="eng-streak">🔥 连续学习 0 天 · 继续加油！</div>
       <div class="eng-grid">
         <div>
           <div class="card">
-            <div class="card-title"><span class="emoji">🔤</span>今日单词</div>
+            <div class="card-title"><span class="emoji">🔤</span>今日单词 <span style="font-size:12px;font-weight:400;color:var(--text-light)" id="word-progress-label">第 1/5 个</span></div>
+            <!-- 5个单词进度条 -->
+            <div class="word-progress-bar" id="word-progress-bar"></div>
             <div class="word-card" id="word-card"></div>
             <div style="display:flex;gap:10px">
               <button class="btn btn-primary" id="word-speak" style="flex:1">🔊 朗读单词</button>
-              <button class="btn btn-primary" id="word-next" style="flex:1;background:linear-gradient(135deg,var(--accent),#A5D4B8)">🔄 换一个</button>
             </div>
             <button class="btn" id="word-fav" style="width:100%;margin-top:10px;background:#FAF6F0;color:var(--text)">⭐ 收藏到单词本</button>
             <!-- 学习确认 -->
@@ -1055,7 +1065,7 @@ body{
                 <button class="spell-action-btn spell-submit-btn" id="spell-submit">✓ 提交</button>
               </div>
               <div class="spell-feedback" id="spell-feedback"></div>
-              <div class="spell-score">🏆 今日拼对：<span id="spell-score">0</span> 次</div>
+              <div class="spell-score">🏆 今日拼对：<span id="spell-score">0</span> / 5</div>
             </div>
           </div>
           <div class="card">
@@ -2438,18 +2448,20 @@ function speak(text, opts={}){
 }
 
 // 拼写状态
-let spellLetters = [];  // 用户已选的字母
+let spellLetters = [];     // 用户已选的字母
+let todayWordList = [];    // 今日5个单词
+let todayWordIdx = 0;      // 当前学到第几个 (0-4)
+let todayDoneCount = 0;    // 今日已拼对数量
 
 function renderEnglish(){
   const todayStr1 = todayStr();
 
-  // 单词：用日期哈希从词库中随机选1个
-  const wordShuffled = WORDS.slice().sort((a,b)=>{
+  // 单词：每天随机5个，用日期哈希打乱
+  todayWordList = WORDS.slice().sort((a,b)=>{
     return hashDate(todayStr1+a.en) - hashDate(todayStr1+b.en);
-  });
-  const todayWord = wordShuffled[0];
-  wordIdx = WORDS.findIndex(w=>w.en===todayWord.en);
-  if(wordIdx<0) wordIdx = 0;
+  }).slice(0, 5);
+  todayWordIdx = 0;
+  todayDoneCount = parseInt(Store.get('spellScore_'+todayStr1, 0)) || 0;
 
   // 实用英语：每天随机选5条
   const phraseShuffled = PHRASES.slice().sort((a,b)=>{
@@ -2468,26 +2480,29 @@ function renderEnglish(){
     <div class="letter-btn" data-letter="${ch}" onclick="addSpellLetter('${ch}')">${ch}</div>
   `).join('');
 
+  // 渲染进度条
+  updateWordProgress();
+  $('#spell-score').textContent = todayDoneCount;
+
   // 单词展示
   const showWord = (idx)=>{
-    const w = WORDS[idx];
+    const w = todayWordList[idx];
     currentWord = w;
+    wordIdx = WORDS.findIndex(x=>x.en===w.en);
+    if(wordIdx<0) wordIdx = 0;
     $('#word-card').innerHTML = `
       <div class="word-en">${w.en}<button class="speak-btn" onclick="speak('${w.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button></div>
       <div class="word-phonetic">${w.ph}<button class="speak-sm" onclick="speak('${w.en.replace(/'/g,"\\'")}',{rate:0.55})" title="慢速朗读">🐢</button></div>
       <div class="word-cn">${w.cn}</div>
       <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}')" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
     `;
-    // 重置拼写区域
     resetSpell();
     $('#spell-section').style.display = 'none';
     $('#learn-confirm').style.display = 'block';
-    // 更新拼写提示
     $('#spell-hint').textContent = '💡 ' + w.cn;
-    const todayScore = Store.get('spellScore_'+todayStr1, 0);
-    $('#spell-score').textContent = todayScore;
+    updateWordProgress();
   };
-  showWord(wordIdx);
+  showWord(0);
 
   // === "我已经学会了" → 进入拼写 ===
   $('#learn-done').onclick = ()=>{
@@ -2504,18 +2519,11 @@ function renderEnglish(){
       addFood('fish');
     }
   };
-  $('#word-next').onclick = ()=>{
-    const currentIdx = wordShuffled.findIndex(w=>w.en===currentWord.en);
-    const nextIdx = (currentIdx+1) % wordShuffled.length;
-    const nextWord = wordShuffled[nextIdx];
-    wordIdx = WORDS.findIndex(w=>w.en===nextWord.en);
-    if(wordIdx<0) wordIdx = 0;
-    showWord(wordIdx);
-  };
   $('#word-fav').onclick = ()=>{
     const learned = Store.get('learnedWords',[]);
-    if(!learned.includes(wordIdx)){
-      learned.push(wordIdx);
+    const idx = WORDS.findIndex(w=>w.en===currentWord.en);
+    if(!learned.includes(idx)){
+      learned.push(idx);
       Store.set('learnedWords', learned);
       toast('⭐ 已收藏到单词本');
       renderWordHistory();
@@ -2555,6 +2563,20 @@ function renderEnglish(){
   renderWordHistory();
 }
 
+// 更新5个单词进度条
+function updateWordProgress(){
+  const bar = $('#word-progress-bar');
+  const label = $('#word-progress-label');
+  if(!bar) return;
+  bar.innerHTML = [0,1,2,3,4].map(i=>{
+    let cls = 'word-progress-dot';
+    if(i < todayWordIdx) cls += ' done';
+    else if(i === todayWordIdx) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+  if(label) label.textContent = '第 '+(todayWordIdx+1)+'/5 个';
+}
+
 // 添加字母
 function addSpellLetter(ch){
   if(!currentWord) return;
@@ -2583,15 +2605,9 @@ function updateSpellDisplay(){
   if(!display) return;
   const chars = spellLetters.map(ch=>`<span class="spell-char">${ch}</span>`).join('');
   display.innerHTML = chars + '<span class="cursor">|</span>';
-  // 更新字母方块状态
-  document.querySelectorAll('.letter-btn').forEach(btn=>{
-    btn.classList.remove('used');
-  });
-  // 标记已使用的字母（按出现次数）
+  document.querySelectorAll('.letter-btn').forEach(btn=>btn.classList.remove('used'));
   const usedCount = {};
-  spellLetters.forEach(ch=>{
-    usedCount[ch] = (usedCount[ch]||0) + 1;
-  });
+  spellLetters.forEach(ch=>{ usedCount[ch] = (usedCount[ch]||0) + 1; });
   document.querySelectorAll('.letter-btn').forEach(btn=>{
     const letter = btn.dataset.letter;
     const wordUpper = currentWord ? currentWord.en.toUpperCase() : '';
@@ -2619,14 +2635,32 @@ function checkSpelling(){
     addFood(reward);
     const foodEmoji = {apple:'🍎',fish:'🐟',carrot:'🥕',cookie:'🍪'};
     toast(foodEmoji[reward]+' 拼写正确！获得 '+foodEmoji[reward]+' 一份');
+    todayDoneCount++;
     const key = 'spellScore_'+todayStr();
-    const score = (Store.get(key,0)||0) + 1;
-    Store.set(key, score);
-    $('#spell-score').textContent = score;
-    // 2秒后换下一个
+    Store.set(key, todayDoneCount);
+    $('#spell-score').textContent = todayDoneCount;
+    // 进入下一个单词
     setTimeout(()=>{
-      // 手动触发换词（通过点击换一个按钮逻辑）
-      $('#word-next').click();
+      todayWordIdx++;
+      if(todayWordIdx >= 5){
+        toast('🎉 今日5个单词全部完成！太厉害了！');
+        todayWordIdx = 0; // 循环展示第一个
+      }
+      const w = todayWordList[todayWordIdx];
+      currentWord = w;
+      wordIdx = WORDS.findIndex(x=>x.en===w.en);
+      if(wordIdx<0) wordIdx = 0;
+      $('#word-card').innerHTML = `
+        <div class="word-en">${w.en}<button class="speak-btn" onclick="speak('${w.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button></div>
+        <div class="word-phonetic">${w.ph}<button class="speak-sm" onclick="speak('${w.en.replace(/'/g,"\\'")}',{rate:0.55})" title="慢速朗读">🐢</button></div>
+        <div class="word-cn">${w.cn}</div>
+        <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}')" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
+      `;
+      $('#spell-hint').textContent = '💡 ' + w.cn;
+      resetSpell();
+      $('#spell-section').style.display = 'none';
+      $('#learn-confirm').style.display = 'block';
+      updateWordProgress();
     }, 2000);
   } else {
     display.className = 'spell-display wrong';
