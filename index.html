@@ -429,28 +429,61 @@ body{
   font-size:13px;color:#2E7D32;font-weight:600;
 }
 
-/* 拼写练习 */
+/* 学习确认 */
+.learn-confirm{margin-top:10px}
+.learn-confirm .btn{font-size:15px;font-weight:700;padding:14px}
+
+/* 拼写练习 - 字母方块 */
 .spell-section{
   margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(195,141,158,.06),rgba(232,168,124,.06));
   border-radius:12px;border:1px dashed rgba(0,0,0,.08);
 }
 .spell-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
 .spell-hint{font-size:18px;font-weight:700;color:var(--secondary);margin-bottom:10px;text-align:center}
-.spell-input-row{display:flex;gap:8px;margin-bottom:8px}
-.spell-input{
-  flex:1;padding:10px 14px;border:2px solid rgba(0,0,0,.1);border-radius:10px;
-  font-size:16px;outline:none;transition:all .2s;font-family:inherit;
+/* 拼写显示区 - 已选字母 */
+.spell-display{
+  min-height:44px;padding:8px 14px;background:#fff;border-radius:10px;
+  border:2px solid rgba(0,0,0,.1);margin-bottom:12px;
+  display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  font-size:22px;font-weight:700;letter-spacing:2px;color:var(--primary-dark);
 }
-.spell-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(133,183,157,.15)}
-.spell-input.correct{border-color:#4CAF50;background:rgba(76,175,80,.06)}
-.spell-input.wrong{border-color:#E57373;background:rgba(229,115,115,.06);animation:shake .4s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.spell-submit{flex-shrink:0}
+.spell-display .spell-char{
+  display:inline-block;padding:2px 4px;border-bottom:2px solid var(--accent);
+}
+.spell-display.correct{border-color:#4CAF50;background:rgba(76,175,80,.04)}
+.spell-display.wrong{border-color:#E57373;background:rgba(229,115,115,.04);animation:shake .4s}
+.spell-display .cursor{animation:blink 1s step-end infinite;color:var(--accent);font-weight:400}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+/* 字母方块网格 */
+.letter-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px;
+}
+.letter-btn{
+  aspect-ratio:1;border:2px solid rgba(0,0,0,.08);border-radius:10px;
+  background:#fff;font-size:16px;font-weight:700;color:var(--text);
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;
+  user-select:none;
+}
+.letter-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.08)}
+.letter-btn:active{transform:scale(.92);background:var(--primary-dark);border-color:var(--primary-dark)}
+.letter-btn.used{opacity:.35;pointer-events:none;background:rgba(0,0,0,.04)}
+/* 操作按钮 */
+.spell-actions{display:flex;gap:8px;margin-bottom:8px}
+.spell-action-btn{
+  flex:1;padding:10px;border-radius:10px;border:2px solid rgba(0,0,0,.08);
+  background:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;
+  color:var(--text);
+}
+.spell-action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.spell-submit-btn{background:var(--accent);color:#fff;border-color:var(--accent)}
+.spell-submit-btn:hover{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff}
 .spell-feedback{font-size:13px;font-weight:600;min-height:20px;text-align:center;margin-bottom:6px}
 .spell-feedback.correct{color:#2E7D32}
 .spell-feedback.wrong{color:#C62828}
 .spell-score{font-size:12px;color:var(--text-light);text-align:center}
 .spell-score span{font-weight:700;color:var(--accent);font-size:16px}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
 /* 实用英语 - 复述模式 */
 .phrase-reveal-btn{
@@ -1007,13 +1040,19 @@ body{
               <button class="btn btn-primary" id="word-next" style="flex:1;background:linear-gradient(135deg,var(--accent),#A5D4B8)">🔄 换一个</button>
             </div>
             <button class="btn" id="word-fav" style="width:100%;margin-top:10px;background:#FAF6F0;color:var(--text)">⭐ 收藏到单词本</button>
-            <!-- 拼写练习 -->
-            <div class="spell-section" id="spell-section">
-              <div class="spell-title">✏️ 拼写练习（看中文写英文，拼对得食物）</div>
+            <!-- 学习确认 -->
+            <div class="learn-confirm" id="learn-confirm">
+              <button class="btn btn-primary" id="learn-done" style="width:100%;margin-top:12px;font-size:15px;padding:14px">✅ 我已经学会了，开始拼写！</button>
+            </div>
+            <!-- 拼写练习 - 字母方块 -->
+            <div class="spell-section" id="spell-section" style="display:none">
+              <div class="spell-title">✏️ 拼写练习（看中文拼英文，点击字母方块）</div>
               <div class="spell-hint" id="spell-hint"></div>
-              <div class="spell-input-row">
-                <input type="text" id="spell-input" class="spell-input" placeholder="输入英文单词..." autocomplete="off" autocapitalize="off">
-                <button class="btn btn-primary spell-submit" id="spell-submit">✓ 提交</button>
+              <div class="spell-display" id="spell-display"></div>
+              <div class="letter-grid" id="letter-grid"></div>
+              <div class="spell-actions">
+                <button class="spell-action-btn" id="spell-del" title="删除">⌫ 删除</button>
+                <button class="spell-action-btn spell-submit-btn" id="spell-submit">✓ 提交</button>
               </div>
               <div class="spell-feedback" id="spell-feedback"></div>
               <div class="spell-score">🏆 今日拼对：<span id="spell-score">0</span> 次</div>
@@ -2398,10 +2437,11 @@ function speak(text, opts={}){
   window.speechSynthesis.speak(u);
 }
 
+// 拼写状态
+let spellLetters = [];  // 用户已选的字母
+
 function renderEnglish(){
-  // 用日期哈希打乱，确保每天内容不同且不重复
   const todayStr1 = todayStr();
-  const wordSeed = hashDate('words_'+todayStr1);
 
   // 单词：用日期哈希从词库中随机选1个
   const wordShuffled = WORDS.slice().sort((a,b)=>{
@@ -2411,11 +2451,22 @@ function renderEnglish(){
   wordIdx = WORDS.findIndex(w=>w.en===todayWord.en);
   if(wordIdx<0) wordIdx = 0;
 
-  // 实用英语：每天随机选5条，用日期哈希打乱
+  // 实用英语：每天随机选5条
   const phraseShuffled = PHRASES.slice().sort((a,b)=>{
     return hashDate(todayStr1+a.en) - hashDate(todayStr1+b.en);
   });
   const todayPhrases = phraseShuffled.slice(0, 5);
+
+  // 重置拼写状态
+  spellLetters = [];
+  $('#spell-section').style.display = 'none';
+  $('#learn-confirm').style.display = 'block';
+
+  // 渲染26个字母方块
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  $('#letter-grid').innerHTML = alphabet.map(ch=>`
+    <div class="letter-btn" data-letter="${ch}" onclick="addSpellLetter('${ch}')">${ch}</div>
+  `).join('');
 
   // 单词展示
   const showWord = (idx)=>{
@@ -2427,20 +2478,24 @@ function renderEnglish(){
       <div class="word-cn">${w.cn}</div>
       <div class="word-example"><button class="speak-ex" onclick="speak('${w.ex.replace(/'/g,"\\'")}')" title="朗读例句">🔊</button><span>💬 ${w.ex}</span></div>
     `;
+    // 重置拼写区域
+    resetSpell();
+    $('#spell-section').style.display = 'none';
+    $('#learn-confirm').style.display = 'block';
     // 更新拼写提示
     $('#spell-hint').textContent = '💡 ' + w.cn;
-    // 清空拼写输入和反馈
-    $('#spell-input').value = '';
-    $('#spell-input').className = 'spell-input';
-    $('#spell-feedback').textContent = '';
-    $('#spell-feedback').className = 'spell-feedback';
-    // 更新今日拼写分数
     const todayScore = Store.get('spellScore_'+todayStr1, 0);
     $('#spell-score').textContent = todayScore;
-    // 焦点回到输入框
-    setTimeout(()=>$('#spell-input').focus(), 100);
   };
   showWord(wordIdx);
+
+  // === "我已经学会了" → 进入拼写 ===
+  $('#learn-done').onclick = ()=>{
+    $('#learn-confirm').style.display = 'none';
+    $('#spell-section').style.display = 'block';
+    resetSpell();
+    toast('📝 试试看能不能拼出来吧！');
+  };
 
   $('#word-speak').onclick = ()=>{
     if(currentWord){
@@ -2450,7 +2505,6 @@ function renderEnglish(){
     }
   };
   $('#word-next').onclick = ()=>{
-    // 在同一天的打乱列表中循环，不会出现重复
     const currentIdx = wordShuffled.findIndex(w=>w.en===currentWord.en);
     const nextIdx = (currentIdx+1) % wordShuffled.length;
     const nextWord = wordShuffled[nextIdx];
@@ -2465,66 +2519,14 @@ function renderEnglish(){
       Store.set('learnedWords', learned);
       toast('⭐ 已收藏到单词本');
       renderWordHistory();
-    } else {
-      toast('已经收藏过了');
-    }
+    } else { toast('已经收藏过了'); }
   };
 
-  // === 拼写检查 ===
+  // === 字母方块点击 ===
+  $('#spell-del').onclick = delSpellLetter;
   $('#spell-submit').onclick = checkSpelling;
-  $('#spell-input').onkeydown = (e)=>{
-    if(e.key === 'Enter') checkSpelling();
-  };
 
-  function checkSpelling(){
-    if(!currentWord) return;
-    const input = $('#spell-input').value.trim();
-    const fb = $('#spell-feedback');
-    const inp = $('#spell-input');
-    if(!input){ fb.textContent = '请输入单词'; fb.className = 'spell-feedback wrong'; return; }
-
-    if(input.toLowerCase() === currentWord.en.toLowerCase()){
-      // 拼对了！
-      inp.className = 'spell-input correct';
-      fb.textContent = '✅ 完全正确！太棒了！';
-      fb.className = 'spell-feedback correct';
-      // 奖励食物：随机给一种
-      const foods = ['apple','fish','carrot','cookie'];
-      const reward = foods[Math.floor(Math.random()*foods.length)];
-      addFood(reward);
-      const foodEmoji = {apple:'🍎',fish:'🐟',carrot:'🥕',cookie:'🍪'};
-      toast(foodEmoji[reward]+' 拼写正确！获得 '+foodEmoji[reward]+' 一份');
-      // 记录今日拼对次数
-      const key = 'spellScore_'+todayStr1;
-      const score = (Store.get(key,0)||0) + 1;
-      Store.set(key, score);
-      $('#spell-score').textContent = score;
-      // 1.5秒后自动换下一个单词（在今日打乱列表中循环）
-      setTimeout(()=>{
-        const currentIdx = wordShuffled.findIndex(w=>w.en===currentWord.en);
-        const nextIdx = (currentIdx+1) % wordShuffled.length;
-        const nextWord = wordShuffled[nextIdx];
-        wordIdx = WORDS.findIndex(w=>w.en===nextWord.en);
-        if(wordIdx<0) wordIdx = 0;
-        showWord(wordIdx);
-      }, 1500);
-    } else {
-      // 拼错了
-      inp.className = 'spell-input wrong';
-      const correct = currentWord.en;
-      let hint = '❌ 再试一次！';
-      if(input.length >= 2 && correct.toLowerCase().startsWith(input.toLowerCase())){
-        hint += ' 开头正确，继续加油！';
-      } else if(input.length >= 1){
-        hint += ' 提示：以 "'+correct[0].toUpperCase()+'" 开头，共 '+correct.length+' 个字母';
-      }
-      fb.textContent = hint;
-      fb.className = 'spell-feedback wrong';
-      setTimeout(()=>{ inp.className = 'spell-input'; inp.focus(); }, 500);
-    }
-  }
-
-  // 实用英语 - 每天随机5条，默认隐藏英文（复述模式）
+  // 实用英语
   $('#phrase-list').innerHTML = todayPhrases.map((p,i)=>`
     <div class="phrase-item">
       <button class="speak-phrase" onclick="speak('${p.en.replace(/'/g,"\\'")}')" title="朗读">🔊</button>
@@ -2542,7 +2544,6 @@ function renderEnglish(){
     engHistory.push(todayStr1);
     Store.set('engHistory', engHistory);
   }
-  // 连续天数
   let streak = 0;
   const d = new Date();
   while(true){
@@ -2551,8 +2552,95 @@ function renderEnglish(){
     else break;
   }
   $('#eng-streak').innerHTML = '🔥 连续学习 '+streak+' 天 · 已学 '+engHistory.length+' 天 · 继续加油！';
-
   renderWordHistory();
+}
+
+// 添加字母
+function addSpellLetter(ch){
+  if(!currentWord) return;
+  spellLetters.push(ch);
+  updateSpellDisplay();
+}
+
+// 删除最后一个字母
+function delSpellLetter(){
+  spellLetters.pop();
+  updateSpellDisplay();
+}
+
+// 重置拼写
+function resetSpell(){
+  spellLetters = [];
+  updateSpellDisplay();
+  $('#spell-feedback').textContent = '';
+  $('#spell-feedback').className = 'spell-feedback';
+  $('#spell-display').className = 'spell-display';
+}
+
+// 更新字母显示
+function updateSpellDisplay(){
+  const display = $('#spell-display');
+  if(!display) return;
+  const chars = spellLetters.map(ch=>`<span class="spell-char">${ch}</span>`).join('');
+  display.innerHTML = chars + '<span class="cursor">|</span>';
+  // 更新字母方块状态
+  document.querySelectorAll('.letter-btn').forEach(btn=>{
+    btn.classList.remove('used');
+  });
+  // 标记已使用的字母（按出现次数）
+  const usedCount = {};
+  spellLetters.forEach(ch=>{
+    usedCount[ch] = (usedCount[ch]||0) + 1;
+  });
+  document.querySelectorAll('.letter-btn').forEach(btn=>{
+    const letter = btn.dataset.letter;
+    const wordUpper = currentWord ? currentWord.en.toUpperCase() : '';
+    const needed = wordUpper.split('').filter(c=>c===letter).length;
+    if(needed > 0 && (usedCount[letter]||0) >= needed){
+      btn.classList.add('used');
+    }
+  });
+}
+
+// 检查拼写
+function checkSpelling(){
+  if(!currentWord) return;
+  const input = spellLetters.join('');
+  const fb = $('#spell-feedback');
+  const display = $('#spell-display');
+  if(!input){ fb.textContent = '请点击字母方块拼写单词'; fb.className = 'spell-feedback wrong'; return; }
+
+  if(input.toLowerCase() === currentWord.en.toLowerCase()){
+    display.className = 'spell-display correct';
+    fb.textContent = '✅ 完全正确！太棒了！';
+    fb.className = 'spell-feedback correct';
+    const foods = ['apple','fish','carrot','cookie'];
+    const reward = foods[Math.floor(Math.random()*foods.length)];
+    addFood(reward);
+    const foodEmoji = {apple:'🍎',fish:'🐟',carrot:'🥕',cookie:'🍪'};
+    toast(foodEmoji[reward]+' 拼写正确！获得 '+foodEmoji[reward]+' 一份');
+    const key = 'spellScore_'+todayStr();
+    const score = (Store.get(key,0)||0) + 1;
+    Store.set(key, score);
+    $('#spell-score').textContent = score;
+    // 2秒后换下一个
+    setTimeout(()=>{
+      // 手动触发换词（通过点击换一个按钮逻辑）
+      $('#word-next').click();
+    }, 2000);
+  } else {
+    display.className = 'spell-display wrong';
+    const correct = currentWord.en;
+    let hint = '❌ 再试一次！';
+    if(input.length >= 2 && correct.toLowerCase().startsWith(input.toLowerCase())){
+      hint += ' 开头正确，继续加油！';
+    } else if(input.length >= 1){
+      hint += ' 提示：以 "'+correct[0].toUpperCase()+'" 开头，共 '+correct.length+' 个字母';
+    }
+    fb.textContent = hint;
+    fb.className = 'spell-feedback wrong';
+    setTimeout(()=>{ display.className = 'spell-display'; resetSpell(); }, 800);
+  }
 }
 
 // 切换实用英语的显示/隐藏
