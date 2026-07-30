@@ -1392,6 +1392,13 @@ const WHO_AGES = [0,1,2,3,4,6,9,12,15,18,21,24,30,36,42,48,54,60,66,72];
 
 // 插值获取标准值
 // ageDays: 天数，内部转为月龄查表
+// 天数格式化为 "X个月Y天"
+function formatAge(totalDays){
+  const m = Math.floor(totalDays/30);
+  const d = Math.round(totalDays%30);
+  return m>0 ? `${m}个月${d}天` : `${d}天`;
+}
+
 function whoInterp(ageDays, gender, type){
   const age = ageDays / 30; // 天数转月龄
   const key = `${gender}_${type}`;
@@ -1534,7 +1541,10 @@ function renderGrowth(){
     // 综合评估
     html += '<div class="growth-tips" style="background:rgba(133,183,157,.08)">';
     html += '<strong>📊 综合评估：</strong>';
-    html += `宝宝 ${age} 天（约 ${(age/30).toFixed(1)} 月），`;
+    const months = Math.floor(age/30);
+    const days = Math.round(age % 30);
+    const ageStr = months>0 ? `${months}个月${days}天` : `${days}天`;
+    html += `宝宝 ${ageStr}，`;
     const assessments = [];
     if(latest.height && p3h) assessments.push('身高'+assessGrowth(latest.height,p3h[0],p3h[1],p3h[2]).level);
     if(latest.weight && p3w) assessments.push('体重'+assessGrowth(latest.weight,p3w[0],p3w[1],p3w[2]).level);
@@ -1552,7 +1562,10 @@ function renderGrowth(){
   if(!isNaN(age) && age >=0 && age <=2190){
     const m = MILESTONES.find(m=> age>=m.age[0] && age<=m.age[1]);
     if(m){
-      $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${age} 天（约 ${(age/30).toFixed(1)} 月）· ${gender==='boy'?'男孩':'女孩'} · 发育关键期</div>`+
+      const months = Math.floor(age/30);
+      const days = Math.round(age % 30);
+      const ageStr = months>0 ? `${months}个月${days}天` : `${days}天`;
+      $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${ageStr} · ${gender==='boy'?'男孩':'女孩'} · 发育关键期</div>`+
         m.tips.map(t=>`<div class="growth-milestone"><div class="gm-dot">✓</div><div><strong>${t.t}</strong><br><span style="color:var(--text-light)">${t.d}</span></div></div>`).join('');
     } else {
       $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该阶段的注意事项</div>';
@@ -1571,7 +1584,7 @@ function renderGrowth(){
       const genderLabel = r.gender==='boy'?'👦':'👧';
       return `<div class="growth-record">
         <span class="gr-date">${r.date||'—'}</span>
-        <span style="font-size:12px;color:var(--text-light);min-width:50px">${genderLabel} ${r.age}天</span>
+        <span style="font-size:12px;color:var(--text-light);min-width:70px">${genderLabel} ${formatAge(r.age)}</span>
         <span class="gr-data">
           ${r.height?`<span class="gr-val">📏 <b>${r.height}</b>cm</span>`:''}
           ${r.weight?`<span class="gr-val">⚖️ <b>${r.weight}</b>kg</span>`:''}
