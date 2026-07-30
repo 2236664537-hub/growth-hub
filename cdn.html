@@ -17,6 +17,33 @@
   <div class="spinner"></div>
   成长工作台加载中...
 </div>
-<iframe id="app" src="https://cdn.jsdelivr.net/gh/2236664537-hub/growth-hub@main/index.html" onload="document.getElementById('loading').style.display='none'"></iframe>
+<iframe id="app" src="about:blank"></iframe>
+<script>
+// 多个 CDN 源，逐个尝试
+const SOURCES = [
+  'https://raw.githubusercontent.com/2236664537-hub/growth-hub/main/index.html',
+  'https://cdn.jsdelivr.net/gh/2236664537-hub/growth-hub@main/index.html',
+  'https://unpkg.com/growth-hub@latest/index.html',
+  'https://2236664537-hub.github.io/growth-hub/index.html'
+];
+let idx = 0;
+function tryNext(){
+  if(idx >= SOURCES.length){
+    document.getElementById('loading').innerHTML = '<div style="color:#D81B60;font-size:18px">⚠️ 加载失败</div><div style="font-size:13px;margin-top:8px;color:#999">请检查网络后刷新重试</div>';
+    return;
+  }
+  const url = SOURCES[idx];
+  console.log('尝试加载:', url);
+  const iframe = document.getElementById('app');
+  iframe.src = url;
+  idx++;
+}
+// 第一个源加载成功后隐藏 loading
+document.getElementById('app').onload = function(){
+  document.getElementById('loading').style.display = 'none';
+};
+document.getElementById('app').onerror = tryNext;
+tryNext();
+</script>
 </body>
 </html>
