@@ -523,6 +523,10 @@ body{
       <button class="nav-item" data-page="growth"><span class="nav-icon">👶</span>生长曲线</button>
       <button class="nav-item" data-page="english"><span class="nav-icon">📖</span>英语</button>
     </nav>
+    <div class="sync-indicator" id="sync-indicator" style="padding:8px 18px;font-size:10px;color:var(--text-light);display:flex;align-items:center;gap:6px;cursor:pointer" title="点击设置数据同步">
+      <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0"></span>
+      <span id="sync-text">未同步</span>
+    </div>
     <div class="sidebar-footer">记录每一天的成长 ✨</div>
   </aside>
 
@@ -2071,6 +2075,171 @@ $('#period-save').onclick = ()=>{
 
 // 设置默认日期
 $('#period-start').value = todayStr();
+
+/* ==================== 数据同步 ==================== */
+// 通过 GitHub Gist 实现跨设备数据同步
+const SYNC_GIST_ID = '2f0fe6b24055e53184e545ed480dfd64';
+let syncToken = null;
+let syncEnabled = false;
+
+function initSync(){
+  syncToken = Store.get('syncToken', '');
+  syncEnabled = Store.get('syncEnabled', false);
+  if(syncEnabled && syncToken){
+    $('#sync-dot').style.background = '#81C784';
+    $('#sync-text').textContent = '已同步';
+    pullFromCloud();
+  } else {
+    $('#sync-dot').style.background = '#ccc';
+    $('#sync-text').textContent = '未同步';
+  }
+}
+
+async function pullFromCloud(){
+  if(!syncEnabled || !syncToken) return;
+  try{
+    const resp = await fetch(`https://api.github.com/gists/${SYNC_GIST_ID}`,{
+      headers: {Authorization: `token ${syncToken}`, Accept:'application/vnd.github.v3+json'}
+    });
+    if(!resp.ok) throw new Error('拉取失败');
+    const gist = await resp.json();
+    const raw = gist.files['growth-hub-data.json'].content;
+    const cloud = JSON.parse(raw);
+    // 合并云端数据到本地（云端优先，本地未同步的数据保留）
+    const localData = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k.startsWith('gh_')) localData[k.slice(3)] = localStorage.getItem(k);
+    }
+    // 云端数据写入本地
+    Object.keys(cloud).forEach(k=>{
+      const val = cloud[k];
+      const localVal = localStorage.getItem('gh_'+k);
+      // 云端数据时间更新则覆盖
+      if(!localVal || (val._updated && (!localVal._updated || val._updated > localVal._updated))){
+        localStorage.setItem('gh_'+k, typeof val==='string'?val:JSON.stringify(val));
+      }
+    });
+    // 本地独有数据上传
+    let needPush = false;
+    Object.keys(localData).forEach(k=>{
+      if(!(k in cloud)){ cloud[k] = JSON.parse(localData[k]); needPush = true; }
+    });
+    if(needPush) await pushToCloud(cloud);
+    // 刷新页面数据
+    renderHome();
+    renderMoodCalendar();
+    renderWeight();
+    renderCycle();
+    renderGrowth();
+    toast('✅ 数据同步成功');
+  }catch(e){
+    console.log('同步失败:', e.message);
+    $('#sync-dot').style.background = '#FFB74D';
+    $('#sync-text').textContent = '同步失败';
+    setTimeout(()=>{ if(syncEnabled){ $('#sync-dot').style.background='#81C784'; $('#sync-text').textContent='已同步'; } },3000);
+  }
+}
+
+async function pushToCloud(cloudData){
+  if(!syncEnabled || !syncToken) return;
+  try{
+    const data = cloudData || {};
+    if(!cloudData){
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k.startsWith('gh_')){
+          try{ data[k.slice(3)] = JSON.parse(localStorage.getItem(k)); }
+          catch(e){ data[k.slice(3)] = localStorage.getItem(k); }
+          if(typeof data[k.slice(3)]==='object') data[k.slice(3)]._updated = Date.now();
+        }
+      }
+    }
+    await fetch(`https://api.github.com/gists/${SYNC_GIST_ID}`,{
+      method:'PATCH',
+      headers:{Authorization:`token ${syncToken}`, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
+      body:JSON.stringify({files:{'growth-hub-data.json':{content:JSON.stringify(data)}}})
+    });
+    $('#sync-dot').style.background = '#81C784';
+    $('#sync-text').textContent = '已同步';
+  }catch(e){
+    console.log('推送失败:', e.message);
+  }
+}
+
+// 自动推送（防抖，3秒内只推送一次）
+let pushTimer = null;
+function autoPush(){
+  if(!syncEnabled || !syncToken) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(()=>pushToCloud(), 3000);
+}
+
+// 同步设置弹窗
+$('#sync-indicator').onclick = ()=>{
+  const token = syncToken || '';
+  const gistId = SYNC_GIST_ID;
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()">
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.15)" onclick="event.stopPropagation()">
+        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">🔄 数据同步设置</div>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:20px">跨设备同步你的所有数据，在任何手机上打开都能看到相同内容。</div>
+        <div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong>步骤 1</strong>：创建 GitHub Token</div>
+        <a href="https://github.com/settings/tokens/new?scopes=gist&description=成长工作台数据同步" target="_blank" style="display:inline-block;padding:8px 16px;background:#333;color:#fff;border-radius:8px;font-size:12px;text-decoration:none;margin-bottom:14px">👉 点此创建 Token</a>
+        <div style="font-size:11px;color:var(--text-light);margin-bottom:16px">在打开的页面中：Expiration 选 <strong>No expiration</strong> → 拉到最底点 <strong>Generate token</strong> → 复制生成的 token</div>
+        <div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong>步骤 2</strong>：粘贴 Token</div>
+        <input id="sync-token-input" type="password" value="${token}" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:monospace;margin-bottom:16px;background:#FAF6F0">
+        <div style="display:flex;gap:10px">
+          <button onclick="saveSyncSettings()" class="btn btn-primary" style="flex:1">💾 保存并启用同步</button>
+          <button onclick="document.getElementById('sync-modal').remove()" class="btn" style="flex:1;background:#FAF6F0;color:var(--text)">取消</button>
+        </div>
+        ${syncEnabled?'<button onclick="disableSync()" style="width:100%;margin-top:12px;padding:10px;background:#FFEBEE;color:#E57373;border:none;border-radius:10px;cursor:pointer;font-size:13px">🔌 关闭同步</button>':''}
+        <div style="margin-top:14px;font-size:11px;color:var(--text-light);line-height:1.6">
+          🔒 Token 仅保存在你的设备本地，不会上传到任何服务器。<br>
+          📦 数据通过 GitHub Gist 加密传输，只有你能访问。
+        </div>
+      </div>
+    </div>
+  `;
+  const modal = document.createElement('div');
+  modal.id = 'sync-modal';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+};
+
+window.saveSyncSettings = function(){
+  const token = document.getElementById('sync-token-input').value.trim();
+  if(!token || !token.startsWith('ghp_')){
+    toast('请输入有效的 GitHub Token（ghp_开头）');
+    return;
+  }
+  Store.set('syncToken', token);
+  Store.set('syncEnabled', true);
+  syncToken = token;
+  syncEnabled = true;
+  document.getElementById('sync-modal').remove();
+  initSync();
+  toast('✅ 同步已开启，正在拉取数据...');
+};
+
+window.disableSync = function(){
+  Store.set('syncEnabled', false);
+  syncEnabled = false;
+  document.getElementById('sync-modal').remove();
+  $('#sync-dot').style.background = '#ccc';
+  $('#sync-text').textContent = '未同步';
+  toast('同步已关闭');
+};
+
+// 重写 Store.set 以自动推送
+const _storeSet = Store.set;
+Store.set = function(key, val){
+  _storeSet(key, val);
+  autoPush();
+};
+
+// 初始化同步
+initSync();
 
 /* ==================== 初始化 ==================== */
 renderHome();
