@@ -350,14 +350,11 @@ body{
 .play-dur-btn.active{
   background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;
 }
-.play-timer{
-  font-size:11px;color:var(--accent);font-weight:700;margin-left:auto;
+.play-status{
+  font-size:11px;color:var(--accent);font-weight:600;margin-left:auto;
   white-space:nowrap;display:flex;align-items:center;gap:4px;
 }
-.play-timer .timer-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse-dot 1s infinite}
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
-.play-timer.paused{color:var(--text-light)}
-.play-timer.paused .timer-dot{animation:none;background:var(--text-light)}
 .play-progress{
   height:3px;background:rgba(0,0,0,.05);border-radius:0;
 }
@@ -2047,31 +2044,69 @@ function hashDate(dateStr){
 
 let currentAge = '0-2';
 
-// 播放控制状态
+// 播放控制状态 — 基于视频真实时长 + 循环次数
 let kidsPlayState = {
-  activeIdx: -1,        // 当前正在播放的视频索引
-  duration: 300,        // 默认5分钟 (秒)
-  remaining: 0,         // 剩余秒数
-  timerId: null,        // 计时器ID
-  isPaused: false,      // 是否暂停
-  todayItems: []        // 当前展示的视频列表
+  activeIdx: -1,          // 当前播放的视频索引
+  repeatCount: 3,         // 默认播放3遍
+  playedCount: 0,         // 已播放次数
+  isPaused: false,        // 是否暂停
+  todayItems: [],         // 当前展示的视频列表
+  bilibiliMsgHandler: null // postMessage 监听器
 };
 
-// 格式化时间
-function fmtTime(sec){
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2,'0')}`;
+// 设置 B站播放器 postMessage 监听
+function setupBilibiliListener(){
+  if(kidsPlayState.bilibiliMsgHandler){
+    window.removeEventListener('message', kidsPlayState.bilibiliMsgHandler);
+  }
+  kidsPlayState.bilibiliMsgHandler = function(e){
+    // B站播放器通过 postMessage 发送播放状态
+    if(!e.data || typeof e.data !== 'string') return;
+    let data;
+    try { data = JSON.parse(e.data); } catch(_){ return; }
+    // 监听视频播放结束事件
+    if(data.type === 'player_media_ended' || data.event === 'video_ended' || data.info === 'ended'){
+      onVideoEnded();
+    }
+    // 也监听一些常见的播放器消息
+    if(data.type === 'player' && data.data === 'ended'){
+      onVideoEnded();
+    }
+  };
+  window.addEventListener('message', kidsPlayState.bilibiliMsgHandler);
+}
+
+// 视频播放结束回调
+function onVideoEnded(){
+  if(kidsPlayState.activeIdx < 0 || kidsPlayState.isPaused) return;
+  kidsPlayState.playedCount++;
+  updatePlayUI();
+
+  if(kidsPlayState.repeatCount === 0){
+    // 循环播放模式，不切换
+    const iframe = document.querySelector(`#kids-iframe-${kidsPlayState.activeIdx}`);
+    if(iframe){
+      // 重新加载实现循环
+      iframe.src = iframe.src;
+    }
+  } else if(kidsPlayState.playedCount >= kidsPlayState.repeatCount){
+    // 达到次数，切下一个
+    const next = (kidsPlayState.activeIdx + 1) % kidsPlayState.todayItems.length;
+    toast(`⏭ 已播放${kidsPlayState.playedCount}遍，自动切换 (${next+1}/${kidsPlayState.todayItems.length})`);
+    startKidsPlay(next);
+  } else {
+    // 还没到次数，重新播放当前视频
+    const iframe = document.querySelector(`#kids-iframe-${kidsPlayState.activeIdx}`);
+    if(iframe){
+      iframe.src = iframe.src;
+    }
+  }
 }
 
 // 停止当前播放
 function stopKidsPlay(){
-  if(kidsPlayState.timerId){
-    clearInterval(kidsPlayState.timerId);
-    kidsPlayState.timerId = null;
-  }
   kidsPlayState.activeIdx = -1;
-  kidsPlayState.remaining = 0;
+  kidsPlayState.playedCount = 0;
   kidsPlayState.isPaused = false;
   updatePlayUI();
 }
@@ -2081,48 +2116,46 @@ function startKidsPlay(idx){
   stopKidsPlay();
   if(idx >= kidsPlayState.todayItems.length) idx = 0;
   kidsPlayState.activeIdx = idx;
-  kidsPlayState.remaining = kidsPlayState.duration;
+  kidsPlayState.playedCount = 0;
   kidsPlayState.isPaused = false;
 
-  // 刷新对应 iframe 并加 autoplay
+  setupBilibiliListener();
+
+  // 刷新 iframe 并加 autoplay
   const iframe = document.querySelector(`#kids-iframe-${idx}`);
   if(iframe){
     const item = kidsPlayState.todayItems[idx];
     iframe.src = `https://player.bilibili.com/player.html?bvid=${item.bv}&page=1&high_quality=1&autoplay=1`;
   }
 
-  // 启动倒计时
-  kidsPlayState.timerId = setInterval(()=>{
-    if(!kidsPlayState.isPaused){
-      kidsPlayState.remaining--;
-      updatePlayUI();
-      if(kidsPlayState.remaining <= 0){
-        // 时间到，播放下一个
-        const next = (kidsPlayState.activeIdx + 1) % kidsPlayState.todayItems.length;
-        toast(`⏭ 自动切换下一个视频 (${next+1}/${kidsPlayState.todayItems.length})`);
-        startKidsPlay(next);
-      }
-    }
-  }, 1000);
-
   updatePlayUI();
+  toast(`▶ 开始播放 · 将播放${kidsPlayState.repeatCount===0?'无限循环':kidsPlayState.repeatCount+'遍'} (${idx+1}/${kidsPlayState.todayItems.length})`);
 }
 
 // 暂停/继续播放
 function toggleKidsPause(){
   if(kidsPlayState.activeIdx < 0) return;
   kidsPlayState.isPaused = !kidsPlayState.isPaused;
+  const iframe = document.querySelector(`#kids-iframe-${kidsPlayState.activeIdx}`);
+  if(iframe && iframe.contentWindow){
+    if(kidsPlayState.isPaused){
+      iframe.contentWindow.postMessage(JSON.stringify({cmd:'pause'}), '*');
+    } else {
+      iframe.contentWindow.postMessage(JSON.stringify({cmd:'play'}), '*');
+    }
+  }
   updatePlayUI();
 }
 
-// 设置播放时长
-function setKidsDuration(sec, btnEl){
-  kidsPlayState.duration = sec;
-  // 如果正在播放，重置计时
+// 设置播放次数
+function setKidsRepeat(count, btnEl){
+  kidsPlayState.repeatCount = count;
+  // 如果正在播放，重置计数
   if(kidsPlayState.activeIdx >= 0){
-    kidsPlayState.remaining = sec;
+    kidsPlayState.playedCount = 0;
     kidsPlayState.isPaused = false;
     updatePlayUI();
+    toast(`🔄 已切换为播放${count===0?'无限循环':count+'遍'}`);
   }
   // 更新按钮状态
   document.querySelectorAll('.play-dur-btn').forEach(b=>b.classList.remove('active'));
@@ -2137,43 +2170,44 @@ function updatePlayUI(){
   items.forEach((_, i)=>{
     const card = document.querySelector(`#kids-card-${i}`);
     if(!card) return;
-    // 更新"正在播放"标记
     const badge = card.querySelector('.now-playing-indicator');
-    if(i === kidsPlayState.activeIdx && !kidsPlayState.isPaused){
+    const status = card.querySelector('.play-status');
+    const pauseBtn = card.querySelector('.play-pause-btn');
+    const progBar = card.querySelector('.play-progress-bar');
+
+    if(i === kidsPlayState.activeIdx){
+      // 正在播放标记
       if(!badge){
         const b = document.createElement('div');
         b.className = 'now-playing-indicator';
-        b.textContent = '▶ 播放中';
         card.querySelector('.video-box').appendChild(b);
       }
-    } else if(i === kidsPlayState.activeIdx && kidsPlayState.isPaused){
-      if(badge) badge.textContent = '⏸ 已暂停';
-    } else {
-      if(badge) badge.remove();
-    }
-    // 更新计时器
-    const timer = card.querySelector('.play-timer');
-    const pauseBtn = card.querySelector('.play-pause-btn');
-    const progBar = card.querySelector('.play-progress-bar');
-    if(i === kidsPlayState.activeIdx){
-      if(timer){
-        timer.textContent = '';
-        const dot = document.createElement('span');
-        dot.className = 'timer-dot';
-        timer.appendChild(dot);
-        timer.appendChild(document.createTextNode(` ${fmtTime(kidsPlayState.remaining)}`));
-        timer.className = 'play-timer' + (kidsPlayState.isPaused ? ' paused' : '');
+      const bdg = card.querySelector('.now-playing-indicator');
+      if(kidsPlayState.isPaused){
+        bdg.textContent = '⏸ 已暂停';
+      } else {
+        const total = kidsPlayState.repeatCount === 0 ? '∞' : kidsPlayState.repeatCount;
+        bdg.textContent = `▶ 第${kidsPlayState.playedCount+1}/${total}遍`;
       }
+      // 状态文字
+      if(status){
+        const total = kidsPlayState.repeatCount === 0 ? '无限循环' : `共${kidsPlayState.repeatCount}遍`;
+        status.textContent = kidsPlayState.isPaused ? '⏸ 已暂停' : `🔁 第${kidsPlayState.playedCount+1}遍 · ${total}`;
+      }
+      // 暂停按钮
       if(pauseBtn){
         pauseBtn.textContent = kidsPlayState.isPaused ? '▶ 继续' : '⏸ 暂停';
         pauseBtn.className = 'play-pause-btn' + (kidsPlayState.isPaused ? '' : ' playing');
       }
+      // 进度条
       if(progBar){
-        const pct = kidsPlayState.duration > 0 ? ((kidsPlayState.duration - kidsPlayState.remaining) / kidsPlayState.duration * 100) : 0;
+        const total = kidsPlayState.repeatCount === 0 ? 999 : kidsPlayState.repeatCount;
+        const pct = Math.min(100, (kidsPlayState.playedCount / total) * 100);
         progBar.style.width = pct + '%';
       }
     } else {
-      if(timer){ timer.textContent = ''; timer.className = 'play-timer'; }
+      if(badge) badge.remove();
+      if(status) status.textContent = '';
       if(pauseBtn){ pauseBtn.textContent = '▶ 播放'; pauseBtn.className = 'play-pause-btn'; }
       if(progBar) progBar.style.width = '0%';
     }
@@ -2186,28 +2220,25 @@ function renderKids(){
   const pool = KIDS_CONTENT[currentAge];
   const seed = hashDate(today + currentAge);
 
-  // 用日期哈希打乱顺序，每天展示前4个（不同内容）
   const shuffled = pool.slice().sort((a,b)=>{
     const ha = hashDate(today + a.title);
     const hb = hashDate(today + b.title);
     return ha - hb;
   });
 
-  // 取前4个展示
   const todayItems = shuffled.slice(0, 4);
   kidsPlayState.todayItems = todayItems;
 
-  // 日期提示
   const weekDays = ['日','一','二','三','四','五','六'];
   const d = new Date();
   const dateLabel = `${d.getMonth()+1}月${d.getDate()}日 周${weekDays[d.getDay()]}`;
 
-  const durOptions = [
-    {label:'5分钟', sec:300},
-    {label:'10分钟', sec:600},
-    {label:'15分钟', sec:900},
-    {label:'20分钟', sec:1200},
-    {label:'30分钟', sec:1800}
+  const repeatOptions = [
+    {label:'播1遍', count:1},
+    {label:'播2遍', count:2},
+    {label:'播3遍', count:3},
+    {label:'播5遍', count:5},
+    {label:'循环', count:0}
   ];
 
   $('#kids-content').innerHTML = `
@@ -2215,10 +2246,10 @@ function renderKids(){
     ${todayItems.map((c,i)=>`
     <div class="content-card" id="kids-card-${i}" onclick="event.stopPropagation()">
       <div class="play-control-bar">
-        <span class="pl-label">⏱ 播放时长：</span>
-        ${durOptions.map(o=>`<button class="play-dur-btn${i===0&&o.sec===kidsPlayState.duration?' active':''}" onclick="event.stopPropagation();setKidsDuration(${o.sec},this);if(kidsPlayState.activeIdx<0)startKidsPlay(${i})">${o.label}</button>`).join('')}
+        <span class="pl-label">🔁 播放次数：</span>
+        ${repeatOptions.map(o=>`<button class="play-dur-btn${i===0&&o.count===kidsPlayState.repeatCount?' active':''}" onclick="event.stopPropagation();setKidsRepeat(${o.count},this);if(kidsPlayState.activeIdx<0)startKidsPlay(${i})">${o.label}</button>`).join('')}
         <button class="play-pause-btn" onclick="event.stopPropagation();if(kidsPlayState.activeIdx<0)startKidsPlay(${i});else toggleKidsPause()">▶ 播放</button>
-        <span class="play-timer"></span>
+        <span class="play-status" style="font-size:11px;color:var(--accent);font-weight:600;margin-left:auto"></span>
       </div>
       <div class="play-progress"><div class="play-progress-bar"></div></div>
       <div class="video-box" style="position:relative">
