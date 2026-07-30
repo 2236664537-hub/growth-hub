@@ -405,6 +405,40 @@ body{
   background:linear-gradient(135deg,var(--secondary),#D4A5B5);color:#fff;
 }
 
+/* ===== 儿童生长曲线 ===== */
+.growth-form{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.growth-form label{font-size:12px;color:var(--text-light);display:block;margin-bottom:4px}
+.growth-form input,.growth-form select{
+  width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:inherit;color:var(--text);background:#FAF6F0;
+}
+.growth-form input:focus,.growth-form select:focus{outline:none;border-color:var(--accent)}
+.growth-records{margin-top:16px;max-height:360px;overflow-y:auto}
+.growth-record{
+  display:flex;align-items:center;gap:10px;padding:12px;
+  background:#FAF6F0;border-radius:10px;margin-bottom:8px;font-size:13px;
+}
+.growth-record .gr-date{font-weight:600;color:var(--text);min-width:90px}
+.growth-record .gr-data{flex:1;display:flex;gap:12px}
+.growth-record .gr-val{color:var(--text-light);font-size:12px}
+.growth-record .gr-val b{color:var(--primary-dark)}
+.growth-assess{
+  padding:16px;border-radius:12px;margin-top:14px;font-size:13px;line-height:1.7;
+}
+.growth-assess-title{font-weight:700;font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.growth-tips{padding:14px;border-radius:10px;margin-top:10px;font-size:12px;line-height:1.7}
+.growth-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.growth-tab{
+  padding:6px 14px;border-radius:16px;background:#FAF6F0;border:1px solid var(--border);
+  cursor:pointer;font-size:12px;color:var(--text-light);transition:all .2s;
+}
+.growth-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.growth-milestone{
+  display:flex;gap:10px;padding:12px;background:rgba(133,183,157,.08);
+  border-radius:10px;margin-bottom:8px;font-size:13px;align-items:flex-start;
+}
+.growth-milestone .gm-dot{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+
 /* ===== 通用 ===== */
 .empty-state{
   text-align:center;padding:40px;color:var(--text-light);font-size:13px;
@@ -486,6 +520,7 @@ body{
       <button class="nav-item" data-page="cycle"><span class="nav-icon">🌸</span>月经周期</button>
       <button class="nav-item" data-page="excel"><span class="nav-icon">📊</span>Excel</button>
       <button class="nav-item" data-page="kids"><span class="nav-icon">🎵</span>早教儿歌</button>
+      <button class="nav-item" data-page="growth"><span class="nav-icon">👶</span>生长曲线</button>
       <button class="nav-item" data-page="english"><span class="nav-icon">📖</span>英语</button>
     </nav>
     <div class="sidebar-footer">记录每一天的成长 ✨</div>
@@ -756,6 +791,69 @@ body{
       </div>
     </section>
 
+    <!-- ===== 儿童生长曲线 ===== -->
+    <section class="page" id="page-growth">
+      <div class="page-header">
+        <div class="page-title">👶 儿童生长曲线</div>
+        <div class="page-desc">记录宝宝身高/体重/头围 · WHO标准评估 · 月龄发育指导</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📝</span>记录生长数据</div>
+        <div class="growth-form">
+          <div>
+            <label>宝宝名字</label>
+            <input type="text" id="growth-name" placeholder="选填">
+          </div>
+          <div>
+            <label>性别</label>
+            <select id="growth-gender">
+              <option value="boy">👦 男孩</option>
+              <option value="girl">👧 女孩</option>
+            </select>
+          </div>
+          <div>
+            <label>月龄</label>
+            <input type="number" id="growth-age" placeholder="0-72" min="0" max="72" step="0.1">
+          </div>
+          <div>
+            <label>身高 (cm)</label>
+            <input type="number" id="growth-height" placeholder="cm" step="0.1" min="40" max="130">
+          </div>
+          <div>
+            <label>体重 (kg)</label>
+            <input type="number" id="growth-weight" placeholder="kg" step="0.1" min="2" max="40">
+          </div>
+          <div>
+            <label>头围 (cm)</label>
+            <input type="number" id="growth-hc" placeholder="cm" step="0.1" min="30" max="56">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="growth-save" style="width:100%">💾 保存生长数据</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📈</span>生长曲线图</div>
+        <div class="growth-tabs" id="growth-tabs">
+          <div class="growth-tab active" data-chart="height">身高-月龄</div>
+          <div class="growth-tab" data-chart="weight">体重-月龄</div>
+          <div class="growth-tab" data-chart="hc">头围-月龄</div>
+        </div>
+        <div class="chart-box" style="height:340px"><canvas id="growth-chart"></canvas></div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:8px;text-align:center">虚线为 WHO 标准 P3、P50、P97 百分位参考线</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">🔍</span>发育评估</div>
+        <div id="growth-assess"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📋</span>月龄发育注意事项</div>
+        <div id="growth-milestones"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="emoji">📊</span>历史记录</div>
+        <div class="growth-records" id="growth-records"></div>
+      </div>
+    </section>
+
     <!-- ===== 早教儿歌绘本 ===== -->
     <section class="page" id="page-kids">
       <div class="page-header">
@@ -828,6 +926,7 @@ $$('.nav-item').forEach(btn=>{
     if(page==='weight') renderWeight();
     if(page==='pilates') renderPilates();
     if(page==='cycle') renderCycle();
+    if(page==='growth') renderGrowth();
     if(page==='home') renderHome();
   });
 });
@@ -1272,6 +1371,303 @@ function renderExcel(){
   });
 }
 renderExcel();
+
+/* ==================== 儿童生长曲线 ==================== */
+// WHO 生长标准数据 (简化版，取关键月龄)
+// 格式: {月龄: [P3, P50, P97]}
+const WHO_STANDARD = {
+  boy_height: {0:[46.1,49.9,53.7],1:[50.8,54.7,58.6],2:[54.4,58.4,62.4],3:[57.3,61.4,65.5],4:[59.7,63.9,68.0],6:[63.3,67.6,71.9],9:[67.0,71.6,76.2],12:[70.7,75.7,80.7],15:[74.0,79.1,84.2],18:[76.9,82.3,87.7],21:[79.4,85.1,90.9],24:[81.7,87.8,94.0],30:[85.8,92.4,99.0],36:[89.5,96.3,103.1],42:[93.0,100.0,107.0],48:[96.2,103.3,110.4],54:[99.3,106.7,114.1],60:[102.5,110.0,117.5],66:[105.5,113.3,121.1],72:[108.6,116.6,124.6]},
+  boy_weight: {0:[2.5,3.3,4.4],1:[3.4,4.5,5.8],2:[4.3,5.6,7.1],3:[5.0,6.4,8.0],4:[5.6,7.0,8.7],6:[6.4,7.9,9.8],9:[7.2,8.9,11.0],12:[7.7,9.6,12.0],15:[8.3,10.3,12.8],18:[8.8,10.9,13.7],21:[9.2,11.5,14.5],24:[9.7,12.2,15.3],30:[10.5,13.3,16.9],36:[11.3,14.3,18.3],42:[12.1,15.3,19.7],48:[12.9,16.3,21.2],54:[13.7,17.3,22.7],60:[14.5,18.3,24.2],66:[15.3,19.3,25.7],72:[16.1,20.3,27.2]},
+  boy_hc:     {0:[31.9,34.5,37.1],1:[33.9,36.6,39.3],2:[35.3,38.0,40.7],3:[36.5,39.3,42.1],4:[37.4,40.2,43.1],6:[38.7,41.5,44.3],9:[39.9,42.7,45.5],12:[40.8,43.7,46.6],15:[41.6,44.5,47.4],18:[42.2,45.2,48.2],21:[42.7,45.7,48.7],24:[43.1,46.2,49.3],30:[43.8,46.9,50.0],36:[44.4,47.5,50.6],42:[44.9,48.0,51.1],48:[45.3,48.5,51.7],54:[45.7,48.9,52.1],60:[46.0,49.2,52.4],66:[46.3,49.5,52.7],72:[46.6,49.8,53.0]},
+  girl_height:{0:[45.4,49.1,52.9],1:[49.8,53.7,57.6],2:[53.0,57.1,61.1],3:[55.6,59.8,64.0],4:[57.8,62.1,66.4],6:[61.2,65.7,70.3],9:[65.0,69.7,74.5],12:[68.7,73.8,78.9],15:[72.0,77.3,82.6],18:[75.0,80.7,86.4],21:[77.7,83.7,89.7],24:[80.0,86.4,92.9],30:[84.0,90.9,97.8],36:[87.4,94.7,102.0],42:[90.6,98.3,106.0],48:[93.8,101.8,109.8],54:[97.0,105.3,113.6],60:[100.3,108.8,117.3],66:[103.5,112.3,121.1],72:[106.7,115.8,124.9]},
+  girl_weight:{0:[2.4,3.2,4.2],1:[3.2,4.2,5.5],2:[4.0,5.1,6.6],3:[4.6,5.8,7.5],4:[5.1,6.4,8.1],6:[5.7,7.3,9.3],9:[6.5,8.2,10.5],12:[7.0,8.9,11.5],15:[7.5,9.6,12.4],18:[8.0,10.2,13.2],21:[8.4,10.7,14.0],24:[8.7,11.3,14.8],30:[9.5,12.4,16.4],36:[10.2,13.4,17.9],42:[10.9,14.4,19.4],48:[11.6,15.3,20.9],54:[12.3,16.2,22.4],60:[13.0,17.1,23.9],66:[13.7,18.0,25.4],72:[14.4,18.9,26.9]},
+  girl_hc:    {0:[31.5,33.9,36.3],1:[33.3,35.8,38.3],2:[34.6,37.1,39.6],3:[35.7,38.2,40.7],4:[36.5,39.1,41.7],6:[37.8,40.4,43.0],9:[38.9,41.6,44.3],12:[39.9,42.6,45.3],15:[40.6,43.3,46.0],18:[41.2,43.9,46.6],21:[41.7,44.4,47.1],24:[42.1,44.8,47.5],30:[42.7,45.4,48.1],36:[43.2,45.9,48.6],42:[43.6,46.3,49.0],48:[44.0,46.7,49.4],54:[44.3,47.0,49.7],60:[44.6,47.3,50.0],66:[44.9,47.6,50.3],72:[45.1,47.8,50.5]}
+};
+const WHO_AGES = [0,1,2,3,4,6,9,12,15,18,21,24,30,36,42,48,54,60,66,72];
+
+// 插值获取标准值
+function whoInterp(age, gender, type){
+  const key = `${gender}_${type}`;
+  const data = WHO_STANDARD[key];
+  if(!data) return null;
+  const ages = WHO_AGES;
+  if(age <= ages[0]) return data[ages[0]];
+  if(age >= ages[ages.length-1]) return data[ages[ages.length-1]];
+  for(let i=0;i<ages.length-1;i++){
+    if(age >= ages[i] && age <= ages[i+1]){
+      const t = (age - ages[i]) / (ages[i+1] - ages[i]);
+      const lo = data[ages[i]], hi = data[ages[i+1]];
+      return [lo[0]+(hi[0]-lo[0])*t, lo[1]+(hi[1]-lo[1])*t, lo[2]+(hi[2]-lo[2])*t];
+    }
+  }
+  return null;
+}
+
+function assessGrowth(value, p3, p50, p97){
+  if(value == null) return {level:'无数据', pct:'-', color:'var(--text-light)', bg:'#FAF6F0'};
+  if(value < p3) return {level:'偏低', pct:'<P3', color:'#64B5F6', bg:'#E3F2FD', desc:'低于同月龄97%的宝宝，建议咨询儿科医生'};
+  if(value < p15()){
+    // P3~P15
+    const pct = Math.round(3 + (value-p3)/(p50-p3)*12);
+    return {level:'偏瘦小', pct:'P'+pct, color:'#81C784', bg:'#E8F5E9', desc:'在正常范围偏低，注意营养和生长监测'};
+  }
+  if(value <= p50) return {level:'标准', pct:'P15-P50', color:'#81C784', bg:'#E8F5E9', desc:'生长状况良好，在标准范围内 👍'};
+  if(value <= p85()) return {level:'标准', pct:'P50-P85', color:'#81C784', bg:'#E8F5E9', desc:'生长状况良好，发育偏上，很棒！👍'};
+  if(value <= p97) return {level:'偏高大', pct:'P85-P97', color:'#FFB74D', bg:'#FFF3E0', desc:'在正常范围偏高，注意均衡营养'};
+  return {level:'偏高', pct:'>P97', color:'#E57373', bg:'#FFEBEE', desc:'高于同月龄97%的宝宝，建议咨询医生评估'};
+  function p15(){ return p3 + (p50-p3)*0.4; }
+  function p85(){ return p50 + (p97-p50)*0.7; }
+}
+
+// 月龄发育注意事项
+const MILESTONES = [
+  {age:[0,2], tips:[
+    {t:'俯卧练习',d:'每天短时间俯卧（1-2分钟），锻炼颈部和肩部肌肉，预防扁头。'},
+    {t:'追视训练',d:'用黑白卡或红球在宝宝眼前20-30cm缓慢移动，练习追视。'},
+    {t:'母乳/配方喂养',d:'按需喂养，24小时内8-12次。观察体重增长是否正常。'},
+    {t:'头围监测',d:'每月测头围，前囟门一般12-18月闭合。过快或过慢需就医。'}
+  ]},
+  {age:[3,5], tips:[
+    {t:'翻身练习',d:'帮助宝宝从仰卧翻到侧卧，锻炼躯干力量。一般4-5月会自主翻身。'},
+    {t:'抓握训练',d:'提供摇铃等易抓握玩具，锻炼手部精细动作。'},
+    {t:'添加辅食信号',d:'观察是否出现：头能稳定、对食物感兴趣、挺舌反射消失。一般6月添加。'},
+    {t:'口腔探索期',d:'宝宝开始把东西放嘴里，注意玩具安全和卫生消毒。'}
+  ]},
+  {age:[6,8], tips:[
+    {t:'辅食添加',d:'从高铁米粉开始，每次一种新食物观察3天。逐步增加菜泥、果泥。'},
+    {t:'坐立训练',d:'6-7月可独坐片刻，提供靠垫支撑。多趴多爬，不急于站立。'},
+    {t:'语言启蒙',d:'多跟宝宝说话、唱歌，模仿他的发音。指认物品名称。'},
+    {t:'分离焦虑',d:'6-8月出现陌生人焦虑是正常的，给予足够安全感。'}
+  ]},
+  {age:[9,11], tips:[
+    {t:'爬行训练',d:'鼓励多爬，爬行对大脑双侧协调和感统发展非常重要。'},
+    {t:'手指食物',d:'提供软烂的手指食物（蒸胡萝卜条等），锻炼自主进食。'},
+    {t:'拇食指捏取',d:'9-10月出现精细捏取动作，给泡芙等小食物练习。'},
+    {t:'睡眠规律',d:'逐步建立昼夜规律，白天2次小睡，夜间连续睡10-12小时。'}
+  ]},
+  {age:[12,17], tips:[
+    {t:'学步期',d:'12-15月多数宝宝开始独走。光脚走路有助于足弓和平衡发展。'},
+    {t:'语言爆发',d:'12月左右说出第一个词，多回应、多重复，建立语言连接。'},
+    {t:'自主进食',d:'提供勺子练习，允许弄脏。一岁后可以喝全脂牛奶。'},
+    {t:'社交发展',d:'开始模仿大人行为，平行游戏阶段。注意安全探索空间。'}
+  ]},
+  {age:[18,23], tips:[
+    {t:'大运动',d:'能跑、踢球、上下楼梯。每天至少3小时活动时间。'},
+    {t:'语言发展',d:'词汇量快速增长到50+，开始两个词组合。多读绘本。'},
+    {t:'如厕训练',d:'18-24月可观察如厕信号，不强迫，顺其自然。'},
+    {t:'情绪管理',d:'Terrible Two 前兆，帮助命名情绪，给予有限选择。'}
+  ]},
+  {age:[24,35], tips:[
+    {t:'精细动作',d:'能画直线、搭6-8块积木、用安全剪刀。多提供手工材料。'},
+    {t:'语言爆发',d:'词汇量300+，3-4词句子。多问开放式问题促进表达。'},
+    {t:'社交技能',d:'开始有朋友概念，学习轮流和分享。安排同伴互动。'},
+    {t:'睡眠',d:'白天1次午睡1-2小时，夜间10-12小时。建立固定睡前程序。'}
+  ]},
+  {age:[36,47], tips:[
+    {t:'运动能力',d:'能双脚跳、骑三轮车、单脚站2-3秒。鼓励户外运动。'},
+    {t:'认知发展',d:'能数1-10、认识颜色形状。通过游戏学习，避免过早识字压力。'},
+    {t:'自理能力',d:'能自己穿衣（简单衣物）、独立如厕、饭前洗手。'},
+    {t:'想象力',d:'角色扮演游戏高峰期，提供简单道具促进想象力发展。'}
+  ]},
+  {age:[48,59], tips:[
+    {t:'入学准备',d:'培养专注力（15-20分钟）、听从指令、排队等待的能力。'},
+    {t:'书写前准备',d:'多玩橡皮泥、串珠、涂色，锻炼手部力量。不急于写字。'},
+    {t:'情绪表达',d:'能用语言表达感受，学习冲突解决。共读情绪绘本。'},
+    {t:'换牙准备',d:'乳牙松动是正常的，约5-6岁开始换牙。注意口腔卫生。'}
+  ]},
+  {age:[60,72], tips:[
+    {t:'幼小衔接',d:'培养学习习惯和任务意识，每天固定阅读时间。不超前学拼音写字。'},
+    {t:'体能发展',d:'能跳绳、拍球50+。每天户外运动至少1小时，保护视力。'},
+    {t:'社交合作',d:'能参与团队游戏和规则游戏，学习处理同伴冲突。'},
+    {t:'营养均衡',d:'生长速度放缓但仍需均衡营养。注意钙、铁、锌的摄入。'}
+  ]}
+];
+
+let growthChartType = 'height';
+
+function renderGrowth(){
+  const gender = $('#growth-gender').value;
+  const records = Store.get('growthRecords',[]);
+  const name = Store.get('growthName','');
+  if(name) $('#growth-name').value = name;
+
+  // Tab切换
+  $$('.growth-tab').forEach(t=> t.classList.toggle('active', t.dataset.chart===growthChartType));
+  $('#growth-tabs').onclick = function(e){
+    if(e.target.classList.contains('growth-tab')){
+      growthChartType = e.target.dataset.chart;
+      renderGrowth();
+    }
+  };
+
+  // 绘制图表
+  renderGrowthChart(gender, records);
+
+  // 发育评估
+  const age = parseFloat($('#growth-age').value);
+  if(records.length > 0 && !isNaN(age)){
+    const latest = records[records.length-1];
+    const p3h = whoInterp(age, gender, 'height');
+    const p3w = whoInterp(age, gender, 'weight');
+    const p3hc = whoInterp(age, gender, 'hc');
+    let html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+    if(latest.height && p3h){
+      const a = assessGrowth(latest.height, p3h[0], p3h[1], p3h[2]);
+      html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">📏 身高</div><div style="font-size:22px;font-weight:700;color:${a.color}">${latest.height} cm</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
+    }
+    if(latest.weight && p3w){
+      const a = assessGrowth(latest.weight, p3w[0], p3w[1], p3w[2]);
+      html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">⚖️ 体重</div><div style="font-size:22px;font-weight:700;color:${a.color}">${latest.weight} kg</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
+    }
+    if(latest.hc && p3hc){
+      const a = assessGrowth(latest.hc, p3hc[0], p3hc[1], p3hc[2]);
+      html += `<div class="growth-assess" style="background:${a.bg}"><div style="font-size:12px;color:var(--text-light)">🧠 头围</div><div style="font-size:22px;font-weight:700;color:${a.color}">${latest.hc} cm</div><div style="font-size:12px;color:${a.color};font-weight:600">${a.level} ${a.pct}</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">${a.desc}</div></div>`;
+    }
+    html += '</div>';
+    // 综合评估
+    html += '<div class="growth-tips" style="background:rgba(133,183,157,.08)">';
+    html += '<strong>📊 综合评估：</strong>';
+    html += `宝宝 ${age.toFixed(0)} 月龄，`;
+    const assessments = [];
+    if(latest.height && p3h) assessments.push('身高'+assessGrowth(latest.height,p3h[0],p3h[1],p3h[2]).level);
+    if(latest.weight && p3w) assessments.push('体重'+assessGrowth(latest.weight,p3w[0],p3w[1],p3w[2]).level);
+    if(latest.hc && p3hc) assessments.push('头围'+assessGrowth(latest.hc,p3hc[0],p3hc[1],p3hc[2]).level);
+    html += assessments.join('、')+'。';
+    if(assessments.every(a=>a.includes('标准'))) html += '各项指标均在标准范围内，发育良好！';
+    else html += '请关注相应指标，如有疑虑可咨询儿科医生。';
+    html += '</div>';
+    $('#growth-assess').innerHTML = html;
+  } else {
+    $('#growth-assess').innerHTML = '<div class="empty-state">记录身高/体重/头围和月龄后，这里会显示发育评估</div>';
+  }
+
+  // 月龄注意事项
+  if(!isNaN(age) && age >=0 && age <=72){
+    const m = MILESTONES.find(m=> age>=m.age[0] && age<=m.age[1]);
+    if(m){
+      $('#growth-milestones').innerHTML = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">📍 ${age.toFixed(0)} 月龄 · ${gender==='boy'?'男孩':'女孩'} · 发育关键期</div>`+
+        m.tips.map(t=>`<div class="growth-milestone"><div class="gm-dot">✓</div><div><strong>${t.t}</strong><br><span style="color:var(--text-light)">${t.d}</span></div></div>`).join('');
+    } else {
+      $('#growth-milestones').innerHTML = '<div class="empty-state">暂无该月龄的注意事项</div>';
+    }
+  } else {
+    $('#growth-milestones').innerHTML = '<div class="empty-state">输入月龄后显示该阶段注意事项</div>';
+  }
+
+  // 历史记录
+  const tbody = $('#growth-records');
+  if(records.length===0){
+    tbody.innerHTML = '<div class="empty-state">暂无记录</div>';
+  } else {
+    records.sort((a,b)=>a.age - b.age);
+    tbody.innerHTML = records.map((r,i)=>{
+      const genderLabel = r.gender==='boy'?'👦':'👧';
+      return `<div class="growth-record">
+        <span class="gr-date">${r.date||'—'}</span>
+        <span style="font-size:12px;color:var(--text-light);min-width:40px">${genderLabel} ${r.age.toFixed(0)}月</span>
+        <span class="gr-data">
+          ${r.height?`<span class="gr-val">📏 <b>${r.height}</b>cm</span>`:''}
+          ${r.weight?`<span class="gr-val">⚖️ <b>${r.weight}</b>kg</span>`:''}
+          ${r.hc?`<span class="gr-val">🧠 <b>${r.hc}</b>cm</span>`:''}
+        </span>
+        <button class="del-btn" data-idx="${i}">✕</button>
+      </div>`;
+    }).join('');
+    $$('#growth-records .del-btn').forEach(b=> b.onclick = ()=>{
+      const idx = +b.dataset.idx;
+      const recs = Store.get('growthRecords',[]);
+      recs.splice(idx,1);
+      Store.set('growthRecords', recs);
+      renderGrowth();
+      toast('已删除');
+    });
+  }
+}
+
+function renderGrowthChart(gender, records){
+  const ctx = $('#growth-chart');
+  if(window._growthChart) window._growthChart.destroy();
+
+  const typeMap = {height:{key:'height', label:'身高', unit:'cm', yLabel:'cm', yMin:40, yMax:130},
+                   weight:{key:'weight', label:'体重', unit:'kg', yLabel:'kg', yMin:2, yMax:40},
+                   hc:{key:'hc', label:'头围', unit:'cm', yLabel:'cm', yMin:30, yMax:56}};
+  const tm = typeMap[growthChartType];
+
+  // 标准曲线
+  const stdX = [], stdP3=[], stdP50=[], stdP97=[];
+  for(let a=0; a<=72; a+=0.5){
+    const v = whoInterp(a, gender, growthChartType);
+    if(v){
+      stdX.push(a.toFixed(0));
+      stdP3.push(v[0]);
+      stdP50.push(v[1]);
+      stdP97.push(v[2]);
+    }
+  }
+
+  // 宝宝数据
+  const myX=[], myY=[];
+  records.sort((a,b)=>a.age-b.age);
+  records.forEach(r=>{
+    if(r.gender===gender && r[tm.key]){
+      myX.push(r.age);
+      myY.push(r[tm.key]);
+    }
+  });
+
+  const datasets = [
+    {label:'P3 (下限)', data:stdP3.map((v,i)=>({x:stdX[i],y:v})), borderColor:'rgba(100,181,246,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3},
+    {label:'P50 (中位)', data:stdP50.map((v,i)=>({x:stdX[i],y:v})), borderColor:'rgba(129,199,132,.8)', borderWidth:2, pointRadius:0, fill:false, tension:0.3},
+    {label:'P97 (上限)', data:stdP97.map((v,i)=>({x:stdX[i],y:v})), borderColor:'rgba(255,183,77,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3},
+  ];
+  if(myX.length>0){
+    datasets.push({label:'宝宝', data:myX.map((v,i)=>({x:v,y:myY[i]})), borderColor:'#E8A87C', backgroundColor:'#E8A87C', pointRadius:6, pointBackgroundColor:'#E8A87C', pointBorderColor:'#fff', pointBorderWidth:2, showLine:myX.length>1, tension:0, order:0});
+  }
+
+  window._growthChart = new Chart(ctx, {
+    type:'scatter',
+    data:{ datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true, position:'top', labels:{font:{size:11}, usePointStyle:true}},
+        tooltip:{ callbacks:{ label: ctx=> {
+          if(ctx.dataset.label==='宝宝') return `宝宝: ${ctx.parsed.x}月, ${ctx.parsed.y} ${tm.unit}`;
+          return `${ctx.dataset.label}: ${ctx.parsed.y} ${tm.unit}`;
+        }}}
+      },
+      scales:{
+        x:{ title:{display:true,text:'月龄'}, grid:{color:'#F5EDDF'}, min:0, max:72 },
+        y:{ title:{display:true,text:tm.yLabel}, grid:{color:'#F5EDDF'}, min:tm.yMin, max:tm.yMax }
+      }
+    }
+  });
+}
+
+$('#growth-save').onclick = ()=>{
+  const name = $('#growth-name').value.trim();
+  const gender = $('#growth-gender').value;
+  const age = parseFloat($('#growth-age').value);
+  const height = parseFloat($('#growth-height').value) || null;
+  const weight = parseFloat($('#growth-weight').value) || null;
+  const hc = parseFloat($('#growth-hc').value) || null;
+
+  if(isNaN(age) || age<0 || age>72){ toast('请输入有效月龄(0-72)'); return; }
+  if(!height && !weight && !hc){ toast('至少输入一项生长数据'); return; }
+
+  if(name) Store.set('growthName', name);
+
+  const records = Store.get('growthRecords',[]);
+  // 同月龄覆盖
+  const existIdx = records.findIndex(r=>r.gender===gender && Math.abs(r.age-age)<0.5);
+  const record = {date:todayStr(), gender, age, height, weight, hc};
+  if(existIdx>=0) records[existIdx] = record;
+  else records.push(record);
+
+  Store.set('growthRecords', records);
+  renderGrowth();
+  toast('生长数据已保存 ✅');
+};
 
 /* ==================== 早教儿歌绘本 ==================== */
 const KIDS_CONTENT = {
