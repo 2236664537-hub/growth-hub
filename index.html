@@ -1747,51 +1747,67 @@ function renderGrowthChart(gender, records){
                    hc:{key:'hc', label:'头围', unit:'cm', yLabel:'cm', yMin:30, yMax:56}};
   const tm = typeMap[growthChartType];
 
-  // 标准曲线 - 按天数生成 (0到2190天，每30天一个点)
-  const stdX = [], stdP3=[], stdP50=[], stdP97=[];
+  // 标准曲线 - 生成密集的月龄点（转天数），确保线条平滑
+  const stdLabels = [], stdP3=[], stdP50=[], stdP97=[];
   for(let a=0; a<=2190; a+=30){
     const v = whoInterp(a, gender, growthChartType);
     if(v){
-      stdX.push(a);
+      stdLabels.push(a);
       stdP3.push(v[0]);
       stdP50.push(v[1]);
       stdP97.push(v[2]);
     }
   }
 
-  // 宝宝数据
-  const myX=[], myY=[];
-  records.sort((a,b)=>a.age-b.age);
-  records.forEach(r=>{
-    if(r.gender===gender && r[tm.key]){
-      myX.push(r.age);
-      myY.push(r[tm.key]);
-    }
-  });
+  // 宝宝数据 - 按天数排序
+  const sorted = records.filter(r=>r.gender===gender && r[tm.key]!=null).sort((a,b)=>a.age-b.age);
+  const myLabels = sorted.map(r=>r.age);
+  const myData = sorted.map(r=>r[tm.key]);
 
   const datasets = [
-    {label:'P3 (下限)', data:stdP3.map((v,i)=>({x:stdX[i],y:v})), borderColor:'rgba(100,181,246,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3},
-    {label:'P50 (中位)', data:stdP50.map((v,i)=>({x:stdX[i],y:v})), borderColor:'rgba(129,199,132,.8)', borderWidth:2, pointRadius:0, fill:false, tension:0.3},
-    {label:'P97 (上限)', data:stdP97.map((v,i)=>({x:stdX[i],y:v})), borderColor:'rgba(255,183,77,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3},
+    {label:'P3 (下限)', data:stdP3, borderColor:'rgba(100,181,246,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3, spanGaps:true},
+    {label:'P50 (中位)', data:stdP50, borderColor:'rgba(129,199,132,.8)', borderWidth:2, pointRadius:0, fill:false, tension:0.3, spanGaps:true},
+    {label:'P97 (上限)', data:stdP97, borderColor:'rgba(255,183,77,.6)', borderDash:[6,4], pointRadius:0, fill:false, tension:0.3, spanGaps:true},
   ];
-  if(myX.length>0){
-    datasets.push({label:'宝宝', data:myX.map((v,i)=>({x:v,y:myY[i]})), borderColor:'#E8A87C', backgroundColor:'#E8A87C', pointRadius:6, pointBackgroundColor:'#E8A87C', pointBorderColor:'#fff', pointBorderWidth:2, showLine:myX.length>1, tension:0, order:0});
+  if(myLabels.length>0){
+    datasets.push({
+      label:'宝宝', data:myData,
+      borderColor:'#E8A87C', backgroundColor:'rgba(232,168,124,.3)',
+      pointRadius:6, pointBackgroundColor:'#E8A87C', pointBorderColor:'#fff', pointBorderWidth:2,
+      showLine:myLabels.length>1, tension:0, fill:false
+    });
   }
 
   window._growthChart = new Chart(ctx, {
-    type:'scatter',
-    data:{ datasets },
+    type:'line',
+    data:{ labels:stdLabels, datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
+      interaction:{intersect:false, mode:'nearest'},
       plugins:{
-        legend:{display:true, position:'top', labels:{font:{size:11}, usePointStyle:true}},
-        tooltip:{ callbacks:{ label: ctx=> {
-          if(ctx.dataset.label==='宝宝') return `宝宝: ${ctx.parsed.x}天, ${ctx.parsed.y} ${tm.unit}`;
-          return `${ctx.dataset.label}: ${ctx.parsed.y} ${tm.unit}`;
-        }}}
+        legend:{display:true, position:'top', labels:{font:{size:11}, usePointStyle:true, boxWidth:20}},
+        tooltip:{
+          callbacks:{
+            title: items=>{
+              if(items[0].dataset.label==='宝宝'){
+                const idx = items[0].dataIndex;
+                return `宝宝: ${myLabels[idx]}天 (约${(myLabels[idx]/30).toFixed(1)}月)`;
+              }
+              return `${items[0].label}天 (约${(items[0].label/30).toFixed(1)}月)`;
+            },
+            label: ctx=>{
+              if(ctx.dataset.label==='宝宝') return `${tm.label}: ${ctx.parsed.y} ${tm.unit}`;
+              return `${ctx.dataset.label}: ${ctx.parsed.y} ${tm.unit}`;
+            }
+          }
+        }
       },
       scales:{
-        x:{ title:{display:true,text:'天数'}, grid:{color:'#F5EDDF'}, min:0, max:2190 },
+        x:{
+          title:{display:true,text:'天数'},
+          grid:{color:'#F5EDDF'},
+          ticks:{callback:v=>{const m=Math.floor(v/30);return m>0?m+'月':v+'天';}, maxTicksLimit:15}
+        },
         y:{ title:{display:true,text:tm.yLabel}, grid:{color:'#F5EDDF'}, min:tm.yMin, max:tm.yMax }
       }
     }
