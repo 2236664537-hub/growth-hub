@@ -1639,19 +1639,22 @@ function renderGrowth(){
   const name = Store.get('growthName','');
   if(name) $('#growth-name').value = name;
 
-  // Tab切换
+  // Tab切换（只绑定一次）
+  if(!window._growthTabBound){
+    $('#growth-tabs').onclick = function(e){
+      if(e.target.classList.contains('growth-tab')){
+        growthChartType = e.target.dataset.chart;
+        renderGrowth();
+      }
+    };
+    window._growthTabBound = true;
+  }
   $$('.growth-tab').forEach(t=> t.classList.toggle('active', t.dataset.chart===growthChartType));
-  $('#growth-tabs').onclick = function(e){
-    if(e.target.classList.contains('growth-tab')){
-      growthChartType = e.target.dataset.chart;
-      renderGrowth();
-    }
-  };
 
-  // 绘制图表
+  // 绘制图表 - 传入所有记录，图表内部按性别筛选
   renderGrowthChart(gender, records);
 
-  // 发育评估 - 基于历史记录最新一条数据
+  // 发育评估 - 基于历史记录最新一条数据（按天数排序）
   const genderRecords = records.filter(r=>r.gender===gender).sort((a,b)=>a.age-b.age);
   if(genderRecords.length > 0){
     const latest = genderRecords[genderRecords.length-1];
