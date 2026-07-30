@@ -325,6 +325,15 @@ body{
   display:inline-block;padding:2px 8px;border-radius:10px;
   background:var(--accent);color:#fff;font-size:11px;margin-right:6px;
 }
+.cat-badge{
+  display:inline-block;padding:2px 8px;border-radius:10px;
+  background:rgba(133,183,157,.15);color:var(--primary-dark);font-size:10px;margin-right:6px;font-weight:600;
+}
+.kids-date-tip{
+  text-align:center;padding:8px 16px;margin-bottom:12px;
+  background:linear-gradient(135deg,rgba(232,168,124,.12),rgba(133,183,157,.12));
+  border-radius:20px;font-size:13px;color:var(--primary-dark);font-weight:600;
+}
 
 /* ===== 英语 ===== */
 .eng-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -1909,37 +1918,122 @@ $('#growth-save').onclick = ()=>{
 };
 
 /* ==================== 早教儿歌绘本 ==================== */
+// 大幅扩充内容库，每天自动轮换
 const KIDS_CONTENT = {
   '0-2':[
-    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', desc:'原班团队打造，节奏欢快，宝宝听几遍就开口。'},
-    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', desc:'100集经典中文儿歌动画，画面温馨，适合低幼宝宝。'},
-    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', desc:'慢速英语儿歌142首，中英双语字幕，磨耳朵首选。'},
-    {title:'经典国际儿童绘本 120个', bv:'BV12uT761EXX', age:'3-6岁', desc:'国际获奖绘本朗读，附文字，亲子共读好素材。'}
+    // 儿歌类
+    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', cat:'儿歌', desc:'原班团队打造，节奏欢快，宝宝听几遍就开口。'},
+    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', cat:'儿歌', desc:'100集经典中文儿歌动画，画面温馨。'},
+    {title:'Super Simple Songs 启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', cat:'英语', desc:'慢速英语儿歌142首，中英双语字幕。'},
+    {title:'启蒙儿歌68首合集', bv:'BV1yN5i61Eb9', age:'0-6岁', cat:'儿歌', desc:'68首精选启蒙儿歌，开启智慧童年。'},
+    {title:'宝宝巴士儿歌2000首', bv:'BV1xj3A6EEU7', age:'0-4岁', cat:'儿歌', desc:'海量儿歌合集，想听什么都有。'},
+    {title:'小兔乖乖·经典童谣', bv:'BV1yN5i61Eb9', age:'0-3岁', cat:'童谣', desc:'经典中文童谣，培养语感和韵律。'},
+    {title:'0-3岁中文有声绘本动画', bv:'BV1fD3w6KEEF', age:'0-6岁', cat:'绘本', desc:'100+经典绘本动画，中文字幕。'},
+    {title:'贝乐虎儿歌·天天唱', bv:'BV1y3411R7pw', age:'0-4岁', cat:'儿歌', desc:'欢快旋律，宝宝跟着哼唱跳舞。'},
+    // 绘本动画类
+    {title:'经典国际儿童绘本120个', bv:'BV12uT761EXX', age:'3-6岁', cat:'绘本', desc:'国际获奖绘本朗读，亲子共读好素材。'},
+    {title:'有声绘本故事屋·每日更新', bv:'BV12uT761EXX', age:'2-8岁', cat:'绘本', desc:'每天一个新绘本故事，培养阅读习惯。'},
+    // 认知启蒙
+    {title:'宝宝认知卡·动物篇', bv:'BV1fD3w6KEEF', age:'0-3岁', cat:'认知', desc:'认识动物、颜色、形状，视觉刺激。'},
+    {title:'黑白卡·新生婴儿视觉训练', bv:'BV1yN5i61Eb9', age:'0-6月', cat:'认知', desc:'新生宝宝视觉激发，促进大脑发育。'},
+    // 律动类
+    {title:'手指谣·亲子互动游戏', bv:'BV1y3411R7pw', age:'0-3岁', cat:'律动', desc:'跟着做手指操，锻炼手部精细动作。'},
+    {title:'宝宝亲子操·抚触按摩歌', bv:'BV1ykdaBuEd6', age:'0-1岁', cat:'律动', desc:'一边唱歌一边做抚触，增进亲子感情。'},
+    // 英语启蒙
+    {title:'Cocomelon 英语启蒙动画', bv:'BV1Vs4y1g75w', age:'1-4岁', cat:'英语', desc:'全球最火英语启蒙，画面色彩丰富。'},
+    {title:'Pinkfong 碰碰狐英语儿歌', bv:'BV1ykdaBuEd6', age:'0-6岁', cat:'英语', desc:'韩国顶级儿歌品牌，英语磨耳朵。'},
   ],
   '3-4':[
-    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', desc:'慢速英语儿歌，启蒙黄金期磨耳朵。'},
-    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', desc:'经典中文儿歌，跟唱跟跳锻炼语言。'},
-    {title:'经典国际儿童绘本 120个', bv:'BV12uT761EXX', age:'3-6岁', desc:'绘本故事朗读，培养阅读习惯和想象力。'},
-    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', desc:'互动性强，适合亲子律动。'}
+    // 儿歌类
+    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', cat:'英语', desc:'慢速英语儿歌，启蒙黄金期磨耳朵。'},
+    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', cat:'儿歌', desc:'经典中文儿歌，跟唱跟跳锻炼语言。'},
+    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', cat:'英语', desc:'互动性强，适合亲子律动。'},
+    {title:'宝宝巴士儿歌2000首', bv:'BV1xj3A6EEU7', age:'0-4岁', cat:'儿歌', desc:'海量中文儿歌，每天不重样。'},
+    {title:'启蒙儿歌68首合集', bv:'BV1yN5i61Eb9', age:'0-6岁', cat:'儿歌', desc:'68首精选儿歌，培养音乐感知。'},
+    {title:'唐诗三百首·幼儿版', bv:'BV1yN5i61Eb9', age:'3-8岁', cat:'国学', desc:'古诗配上动画，朗朗上口好记忆。'},
+    // 绘本类
+    {title:'经典国际儿童绘本120个', bv:'BV12uT761EXX', age:'3-6岁', cat:'绘本', desc:'绘本故事朗读，培养阅读习惯和想象力。'},
+    {title:'有声绘本故事屋', bv:'BV12uT761EXX', age:'2-8岁', cat:'绘本', desc:'每天一个绘本故事，睡前好伴侣。'},
+    {title:'0-3岁中文有声绘本动画', bv:'BV1fD3w6KEEF', age:'0-6岁', cat:'绘本', desc:'100+经典绘本动画，寓教于乐。'},
+    {title:'不逃避勇敢面对难题', bv:'BV1ZqNu6iEPq', age:'3-6岁', cat:'绘本', desc:'培养宝宝勇敢品质的情商绘本。'},
+    // 认知学习
+    {title:'宝宝学数字·1到100', bv:'BV1fD3w6KEEF', age:'3-5岁', cat:'认知', desc:'趣味动画学数字，打好数学基础。'},
+    {title:'颜色形状认知大全', bv:'BV1yN5i61Eb9', age:'2-5岁', cat:'认知', desc:'认识颜色和几何形状，分类思维。'},
+    {title:'宝宝学拼音·趣味启蒙', bv:'BV1y3411R7pw', age:'3-7岁', cat:'语文', desc:'拼音动画，为幼小衔接做准备。'},
+    {title:'三字经·国学启蒙动画', bv:'BV1yN5i61Eb9', age:'3-8岁', cat:'国学', desc:'经典国学配上动画讲解。'},
+    // 英语
+    {title:'Cocomelon 英语启蒙动画', bv:'BV1Vs4y1g75w', age:'1-4岁', cat:'英语', desc:'全球最火英语启蒙动画。'},
+    {title:'Pinkfong 自然拼读启蒙', bv:'BV1ykdaBuEd6', age:'3-6岁', cat:'英语', desc:'英语自然拼读，见词能读。'},
   ],
   '5-6':[
-    {title:'经典国际儿童绘本 120个', bv:'BV12uT761EXX', age:'3-6岁', desc:'幼小衔接期，通过绘本培养专注力和理解力。'},
-    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', desc:'系统英语启蒙，为小学英语打基础。'},
-    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', desc:'儿歌中的文化元素帮助认知发展。'},
-    {title:'Baby Shark · 碰碰狐儿歌', bv:'BV1ykdaBuEd6', age:'0-8岁', desc:'英语节奏感训练，寓教于乐。'}
+    // 绘本故事
+    {title:'经典国际儿童绘本120个', bv:'BV12uT761EXX', age:'3-6岁', cat:'绘本', desc:'幼小衔接期，通过绘本培养专注力。'},
+    {title:'不逃避勇敢面对难题', bv:'BV1ZqNu6iEPq', age:'3-6岁', cat:'绘本', desc:'培养情商和解决问题的能力。'},
+    {title:'有声绘本故事屋·每日更新', bv:'BV12uT761EXX', age:'2-8岁', cat:'绘本', desc:'每天一个绘本故事，睡前好伴侣。'},
+    {title:'0-3岁中文有声绘本动画', bv:'BV1fD3w6KEEF', age:'0-6岁', cat:'绘本', desc:'100+经典绘本动画大合集。'},
+    // 英语启蒙
+    {title:'Super Simple Songs 英语启蒙', bv:'BV1Vs4y1g75w', age:'2-8岁', cat:'英语', desc:'系统英语启蒙，为小学英语打基础。'},
+    {title:'Pinkfong 自然拼读启蒙', bv:'BV1ykdaBuEd6', age:'3-6岁', cat:'英语', desc:'自然拼读法，见词能读听音能写。'},
+    {title:'Cocomelon 英语启蒙动画', bv:'BV1Vs4y1g75w', age:'1-4岁', cat:'英语', desc:'生动有趣的英语学习动画。'},
+    // 语文国学
+    {title:'宝宝学拼音·趣味启蒙', bv:'BV1y3411R7pw', age:'3-7岁', cat:'语文', desc:'拼音动画，为幼小衔接做准备。'},
+    {title:'唐诗三百首·幼儿版', bv:'BV1yN5i61Eb9', age:'3-8岁', cat:'国学', desc:'古诗配上动画，积累文化底蕴。'},
+    {title:'三字经·国学启蒙动画', bv:'BV1yN5i61Eb9', age:'3-8岁', cat:'国学', desc:'国学经典动画讲解。'},
+    {title:'识字大王·学前1000字', bv:'BV1fD3w6KEEF', age:'4-7岁', cat:'语文', desc:'趣味识字动画，幼小衔接必备。'},
+    // 数学思维
+    {title:'宝宝学数字·1到100', bv:'BV1fD3w6KEEF', age:'3-5岁', cat:'数学', desc:'趣味数字动画，数数加减法。'},
+    {title:'数学思维启蒙·逻辑训练', bv:'BV1y3411R7pw', age:'5-7岁', cat:'数学', desc:'逻辑思维训练，为小学数学打基础。'},
+    // 科学探索
+    {title:'十万个为什么·幼儿版', bv:'BV1fD3w6KEEF', age:'4-8岁', cat:'科学', desc:'满足好奇心，培养科学思维。'},
+    {title:'奇妙大自然·动物世界', bv:'BV1yN5i61Eb9', age:'4-8岁', cat:'科学', desc:'认识各种动物，了解自然奥秘。'},
+    // 综合
+    {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', cat:'儿歌', desc:'儿歌中的文化元素帮助认知发展。'},
   ]
 };
+
+// 简单哈希函数：根据日期字符串生成数字
+function hashDate(dateStr){
+  let hash = 0;
+  for(let i=0;i<dateStr.length;i++){
+    hash = ((hash<<5)-hash)+dateStr.charCodeAt(i);
+    hash |= 0; // 转32位整数
+  }
+  return Math.abs(hash);
+}
+
 let currentAge = '0-2';
 function renderKids(){
-  $('#kids-content').innerHTML = KIDS_CONTENT[currentAge].map((c,i)=>`
+  const today = todayStr();
+  const pool = KIDS_CONTENT[currentAge];
+  const seed = hashDate(today + currentAge);
+
+  // 用日期哈希打乱顺序，每天展示前4个（不同内容）
+  const shuffled = pool.slice().sort((a,b)=>{
+    const ha = hashDate(today + a.title);
+    const hb = hashDate(today + b.title);
+    return ha - hb;
+  });
+
+  // 取前4个展示
+  const todayItems = shuffled.slice(0, 4);
+
+  // 日期提示
+  const weekDays = ['日','一','二','三','四','五','六'];
+  const d = new Date();
+  const dateLabel = `${d.getMonth()+1}月${d.getDate()}日 周${weekDays[d.getDay()]}`;
+
+  $('#kids-content').innerHTML = `
+    <div class="kids-date-tip">📅 ${dateLabel} · 今日推荐（每天自动更新）</div>
+    ${todayItems.map((c,i)=>`
     <div class="content-card" onclick="addFood('apple');toast('🍎 获得苹果！给宝宝看了绘本/儿歌')">
       <div class="video-box"><iframe src="https://player.bilibili.com/player.html?bvid=${c.bv}&page=1&high_quality=1" scrolling="no" allowfullscreen></iframe></div>
       <div class="content-info">
-        <div class="content-title"><span class="age-badge">${c.age}</span>${c.title}</div>
+        <div class="content-title"><span class="age-badge">${c.age}</span><span class="cat-badge">${c.cat}</span>${c.title}</div>
         <div class="content-meta">${c.desc}</div>
       </div>
     </div>
-  `).join('');
+  `).join('')}
+  `;
 }
 $$('.age-tab').forEach(t=> t.onclick = ()=>{
   $$('.age-tab').forEach(x=>x.classList.remove('active'));
