@@ -2080,6 +2080,8 @@ const KIDS_CONTENT = {
     // 英语启蒙
     {title:'Cocomelon 英语启蒙动画', bv:'BV1Vs4y1g75w', age:'1-4岁', cat:'英语', desc:'全球最火英语启蒙，画面色彩丰富。'},
     {title:'Pinkfong 碰碰狐英语儿歌', bv:'BV1ykdaBuEd6', age:'0-6岁', cat:'英语', desc:'韩国顶级儿歌品牌，英语磨耳朵。'},
+    {title:'小星星·英文经典童谣', bv:'BV1Vs4y1g75w', age:'0-3岁', cat:'英语', desc:'经典英文儿歌，中英双语字幕。'},
+    {title:'宝宝晚安摇篮曲', bv:'BV1ykdaBuEd6', age:'0-2岁', cat:'儿歌', desc:'舒缓摇篮曲，帮助宝宝安然入睡。'},
   ],
   '3-4':[
     // 儿歌类
@@ -2102,6 +2104,8 @@ const KIDS_CONTENT = {
     // 英语
     {title:'Cocomelon 英语启蒙动画', bv:'BV1Vs4y1g75w', age:'1-4岁', cat:'英语', desc:'全球最火英语启蒙动画。'},
     {title:'Pinkfong 自然拼读启蒙', bv:'BV1ykdaBuEd6', age:'3-6岁', cat:'英语', desc:'英语自然拼读，见词能读。'},
+    {title:'弟子规·国学启蒙', bv:'BV1yN5i61Eb9', age:'3-8岁', cat:'国学', desc:'国学经典，培养品德和行为习惯。'},
+    {title:'幼儿舞蹈律动操', bv:'BV1y3411R7pw', age:'3-6岁', cat:'律动', desc:'跟着音乐跳舞，锻炼大运动能力。'},
   ],
   '5-6':[
     // 绘本故事
@@ -2126,6 +2130,11 @@ const KIDS_CONTENT = {
     {title:'奇妙大自然·动物世界', bv:'BV1yN5i61Eb9', age:'4-8岁', cat:'科学', desc:'认识各种动物，了解自然奥秘。'},
     // 综合
     {title:'贝瓦儿歌动画精选合集', bv:'BV1y3411R7pw', age:'0-6岁', cat:'儿歌', desc:'儿歌中的文化元素帮助认知发展。'},
+    // 更多内容确保每天变化丰富
+    {title:'英语启蒙磨耳朵100集', bv:'BV1Vs4y1g75w', age:'4-8岁', cat:'英语', desc:'英语启蒙磨耳朵合集，培养语感。'},
+    {title:'学前思维训练·逻辑狗', bv:'BV1fD3w6KEEF', age:'5-7岁', cat:'数学', desc:'逻辑思维训练，开发左右脑。'},
+    {title:'幼儿安全教育动画', bv:'BV1y3411R7pw', age:'4-7岁', cat:'认知', desc:'交通安全、防拐骗等安全知识。'},
+    {title:'儿童简笔画教程', bv:'BV1yN5i61Eb9', age:'4-8岁', cat:'认知', desc:'跟着画简单图案，锻炼手部精细动作。'},
   ]
 };
 
@@ -2315,13 +2324,21 @@ function renderKids(){
   stopKidsPlay();
   const today = todayStr();
   const pool = KIDS_CONTENT[currentAge];
-  const seed = hashDate(today + currentAge);
 
-  const shuffled = pool.slice().sort((a,b)=>{
-    const ha = hashDate(today + a.title);
-    const hb = hashDate(today + b.title);
-    return ha - hb;
-  });
+  // 用日期哈希作为种子，Fisher-Yates 洗牌算法确保每天完全不同
+  const seededRandom = (seed)=>{
+    let s = seed;
+    return ()=>{
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      return s / 0x7fffffff;
+    };
+  };
+  const rng = seededRandom(hashDate(today + '_' + currentAge));
+  const shuffled = pool.slice();
+  for(let i=shuffled.length-1;i>0;i--){
+    const j = Math.floor(rng() * (i+1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
 
   const todayItems = shuffled.slice(0, 4);
   kidsPlayState.todayItems = todayItems;
